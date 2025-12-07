@@ -1,5 +1,5 @@
 # main.py
-from fastapi import FastAPI, Depends, HTTPException, status, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Depends, HTTPException, status, WebSocket, WebSocketDisconnect, File, UploadFile, Form
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware 
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -248,7 +248,7 @@ def get_user_keys(username: str, db: Session = Depends(get_db)):
 async def upload_file(
     file: UploadFile = File(...),
     to_username: str = Form(...),
-    current_user: dict = Depends(get_current_user),
+    current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Upload encrypted file with security validation"""
@@ -285,7 +285,7 @@ async def upload_file(
         
         # Create database record
         file_message = models.FileMessage(
-            from_user_id=current_user["id"],
+            from_user_id=current_user.id,  # treating as object
             to_user_id=recipient.id,
             filename=safe_filename,
             stored_filename=stored_filename,
@@ -318,7 +318,7 @@ async def upload_file(
 @app.get("/download-file/{file_id}")
 async def download_file(
     file_id: int,
-    current_user: dict = Depends(get_current_user),
+    current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Download encrypted file"""
@@ -330,7 +330,7 @@ async def download_file(
         raise HTTPException(status_code=404, detail="File not found")
     
     # Check authorization
-    if file_message.to_user_id != current_user["id"] and file_message.from_user_id != current_user["id"]:
+    if file_message.to_user_id != current_user.id and file_message.from_user_id != current_user.id:  # NEW
         raise HTTPException(status_code=403, detail="Unauthorized")
     
     file_path = UPLOAD_DIR / file_message.stored_filename

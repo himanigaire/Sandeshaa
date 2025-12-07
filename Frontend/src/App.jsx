@@ -1,6 +1,6 @@
 // src/App.jsx
 import React, { useEffect, useState, useRef } from "react";
-import { registerUser, loginUser, getUserKeys } from "./api";
+import { registerUser, loginUser, getUserKeys, filesAPI } from "./api";
 import {
   getOrCreateIdentityKeys,
   computeSharedSecret,
@@ -24,12 +24,13 @@ function App() {
   const [ws, setWs] = useState(null);
   const [wsStatus, setWsStatus] = useState("Disconnected");
 
-  // NEW: Chat list management
+  // Chat list management
   const [chats, setChats] = useState({}); // { username: { messages: [], unread: 0, lastMessage: "" } }
   const [activeChat, setActiveChat] = useState(null); // Currently selected chat username
   const [messageText, setMessageText] = useState("");
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [newChatUsername, setNewChatUsername] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);  // For file upload
 
   const userKeyCache = useRef({});
   const messagesEndRef = useRef(null);
@@ -101,7 +102,7 @@ function App() {
     socket.onmessage = async (event) => {
       try {
         const data = JSON.parse(event.data);
-        
+
         if (data.type === "message") {
           const fromUser = data.from;
           console.log("Received message from", fromUser, data);
@@ -151,7 +152,8 @@ function App() {
       };
 
       const newMessages = [...existingChat.messages, message];
-      const isUnread = activeChat !== chatUsername && message.direction === "incoming";
+      const isUnread =
+        activeChat !== chatUsername && message.direction === "incoming";
 
       return {
         ...prevChats,
@@ -183,7 +185,7 @@ function App() {
   function startNewChat() {
     const trimmed = newChatUsername.trim();
     if (!trimmed) return;
-    
+
     if (trimmed === username) {
       alert("You can't chat with yourself!");
       return;
@@ -210,7 +212,7 @@ function App() {
   // Select a chat and mark as read
   function selectChat(chatUsername) {
     setActiveChat(chatUsername);
-    
+
     // Mark as read
     setChats((prevChats) => ({
       ...prevChats,
@@ -243,7 +245,9 @@ function App() {
       setIsRegisterMode(false);
     } catch (err) {
       console.error(err);
-      alert("Registration failed (maybe username already taken). Check console.");
+      alert(
+        "Registration failed (maybe username already taken). Check console."
+      );
     }
   };
 
@@ -269,39 +273,44 @@ function App() {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-  
+
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       alert("WebSocket not connected.");
       return;
     }
-  
-    if (!identityKeys || !activeChat) {
+
+    if (!identityKeys) {
+      alert("Identity keys not ready.");
       return;
     }
-  
+    if (!activeChat) {
+      alert("Select a chat first.");
+      return;
+    }
+
     // Handle file upload
     if (selectedFile) {
       try {
-        console.log('Sending file:', selectedFile.name);
-        
+        console.log("Sending file:", selectedFile.name);
+
         const otherPublicKey = await fetchIdentityPublicKey(activeChat);
         const sharedSecret = computeSharedSecret(
           otherPublicKey,
           identityKeys.privateKeyBase64
         );
-  
+
         // Encrypt file
         const encryptedFile = await encryptFile(selectedFile, sharedSecret);
-        
+
         // Upload encrypted file
         const result = await filesAPI.uploadFile(
           new File([encryptedFile], selectedFile.name),
           activeChat,
           token
         );
-  
-        console.log('File uploaded:', result);
-  
+
+        console.log("File uploaded:", result);
+
         // Add file message to chat
         addMessageToChat(activeChat, {
           id: Date.now(),
@@ -315,20 +324,22 @@ function App() {
           direction: "outgoing",
           created_at: new Date().toISOString(),
         });
-  
+
         setSelectedFile(null);
-        alert('File sent successfully!');
+        alert("File sent successfully!");
       } catch (err) {
         console.error("Error sending file:", err);
-        alert("Error sending file: " + (err.response?.data?.detail || err.message));
+        alert(
+          "Error sending file: " + (err.response?.data?.detail || err.message)
+        );
       }
       return;
     }
-  
+
     // Handle text message (existing code)
     const trimmed = messageText.trim();
     if (!trimmed) return;
-  
+
     try {
       const otherPublicKey = await fetchIdentityPublicKey(activeChat);
       const sharedSecret = computeSharedSecret(
@@ -336,7 +347,7 @@ function App() {
         identityKeys.privateKeyBase64
       );
       const ciphertext = encryptMessage(trimmed, sharedSecret);
-  
+
       ws.send(
         JSON.stringify({
           type: "send_message",
@@ -344,7 +355,7 @@ function App() {
           ciphertext,
         })
       );
-  
+
       addMessageToChat(activeChat, {
         id: Date.now(),
         from: username,
@@ -353,7 +364,7 @@ function App() {
         direction: "outgoing",
         created_at: new Date().toISOString(),
       });
-  
+
       setMessageText("");
     } catch (err) {
       console.error("Error sending message:", err);
@@ -362,38 +373,38 @@ function App() {
   };
 
   // Handle file download
-const handleFileDownload = async (fileId, fileName) => {
-  try {
-    console.log('Downloading file:', fileId);
-    
-    const encryptedBlob = await filesAPI.downloadFile(fileId, token);
-    
-    const otherPublicKey = await fetchIdentityPublicKey(activeChat);
-    const sharedSecret = computeSharedSecret(
-      otherPublicKey,
-      identityKeys.privateKeyBase64
-    );
+  const handleFileDownload = async (fileId, fileName) => {
+    try {
+      console.log("Downloading file:", fileId);
 
-    // Decrypt file
-    const decryptedData = await decryptFile(encryptedBlob, sharedSecret);
-    
-    // Download
-    const blob = new Blob([decryptedData]);
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-    
-    alert('File downloaded successfully!');
-  } catch (err) {
-    console.error("Error downloading file:", err);
-    alert("Error downloading file. Check console.");
-  }
-};
+      const encryptedBlob = await filesAPI.downloadFile(fileId, token);
+
+      const otherPublicKey = await fetchIdentityPublicKey(activeChat);
+      const sharedSecret = computeSharedSecret(
+        otherPublicKey,
+        identityKeys.privateKeyBase64
+      );
+
+      // Decrypt file
+      const decryptedData = await decryptFile(encryptedBlob, sharedSecret);
+
+      // Download
+      const blob = new Blob([decryptedData]);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      alert("File downloaded successfully!");
+    } catch (err) {
+      console.error("Error downloading file:", err);
+      alert("Error downloading file. Check console.");
+    }
+  };
 
   // Loading state
   if (!identityKeys) {
@@ -433,7 +444,10 @@ const handleFileDownload = async (fileId, fileName) => {
             </button>
           </div>
 
-          <form className="auth-form" onSubmit={isRegisterMode ? handleRegister : handleLogin}>
+          <form
+            className="auth-form"
+            onSubmit={isRegisterMode ? handleRegister : handleLogin}
+          >
             <div className="form-group">
               <label>Username</label>
               <input
@@ -476,7 +490,9 @@ const handleFileDownload = async (fileId, fileName) => {
       <header className="chat-header">
         <h2>Sandeshaa</h2>
         <div className="user-info">
-          <span>Logged in as <strong>{username}</strong></span>
+          <span>
+            Logged in as <strong>{username}</strong>
+          </span>
           <span className={`ws-status ${wsStatus.toLowerCase()}`}>
             {wsStatus}
           </span>
@@ -488,7 +504,7 @@ const handleFileDownload = async (fileId, fileName) => {
         <div className="chat-list-sidebar">
           <div className="chat-list-header">
             <h3>Chats</h3>
-            <button 
+            <button
               className="btn-new-chat"
               onClick={() => setShowNewChatModal(true)}
               title="Start new chat"
@@ -500,7 +516,10 @@ const handleFileDownload = async (fileId, fileName) => {
           {chatList.length === 0 ? (
             <div className="no-chats">
               <p>No chats yet</p>
-              <button onClick={() => setShowNewChatModal(true)} className="btn-primary">
+              <button
+                onClick={() => setShowNewChatModal(true)}
+                className="btn-primary"
+              >
                 Start a Chat
               </button>
             </div>
@@ -511,7 +530,9 @@ const handleFileDownload = async (fileId, fileName) => {
                 return (
                   <div
                     key={chatUsername}
-                    className={`chat-list-item ${activeChat === chatUsername ? "active" : ""}`}
+                    className={`chat-list-item ${
+                      activeChat === chatUsername ? "active" : ""
+                    }`}
                     onClick={() => selectChat(chatUsername)}
                   >
                     <div className="chat-avatar">
@@ -545,13 +566,16 @@ const handleFileDownload = async (fileId, fileName) => {
           )}
         </div>
 
-          {/* Right: Messages Area */}
-      <div className="messages-container">
+        {/* Right: Messages Area */}
+        <div className="messages-container">
           {!activeChat ? (
             <div className="no-chat-selected">
               <h3>Select a chat to start messaging</h3>
               <p>or</p>
-              <button onClick={() => setShowNewChatModal(true)} className="btn-primary">
+              <button
+                onClick={() => setShowNewChatModal(true)}
+                className="btn-primary"
+              >
                 Start New Chat
               </button>
             </div>
@@ -560,15 +584,39 @@ const handleFileDownload = async (fileId, fileName) => {
               <div className="messages-header">
                 <h3>{activeChat}</h3>
               </div>
-              
+
               <div className="messages-area">
                 {currentMessages.length === 0 ? (
-                  <p className="no-messages">No messages yet. Start the conversation!</p>
+                  <p className="no-messages">
+                    No messages yet. Start the conversation!
+                  </p>
                 ) : (
                   currentMessages.map((m) => (
                     <div key={m.id} className={`message-bubble ${m.direction}`}>
                       <div className="message-content">
-                        <div className="message-text">{m.text}</div>
+                        {m.isFile ? (
+                          <div className="file-message">
+                            <div className="file-icon">📎</div>
+                            <div className="file-info">
+                              <div className="file-name">{m.fileName}</div>
+                              <div className="file-size">
+                                {(m.fileSize / 1024).toFixed(1)} KB
+                              </div>
+                            </div>
+                            {m.direction === "incoming" && (
+                              <button
+                                onClick={() =>
+                                  handleFileDownload(m.fileId, m.fileName)
+                                }
+                                className="btn-download"
+                              >
+                                ⬇️
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="message-text">{m.text}</div>
+                        )}
                         <div className="message-time">
                           {new Date(m.created_at).toLocaleTimeString([], {
                             hour: "2-digit",
@@ -583,15 +631,24 @@ const handleFileDownload = async (fileId, fileName) => {
               </div>
 
               <form className="message-input-form" onSubmit={handleSendMessage}>
+                <FileUpload
+                  onFileSelect={setSelectedFile}
+                  disabled={!activeChat}
+                />
                 <input
                   type="text"
                   value={messageText}
                   onChange={(e) => setMessageText(e.target.value)}
-                  placeholder="Type a message..."
+                  placeholder={selectedFile ? `Sending: ${selectedFile.name}` : "Type a message..."}
                   className="message-input"
+                  disabled={!!selectedFile}
                 />
-                <button type="submit" className="btn-send" disabled={!messageText.trim()}>
-                  Send
+                <button
+                  type="submit"
+                  className="btn-send"
+                  disabled={!messageText.trim() && !selectedFile}
+                >
+                  {selectedFile ? '📤 Send' : 'Send'}
                 </button>
               </form>
             </>
@@ -601,7 +658,10 @@ const handleFileDownload = async (fileId, fileName) => {
 
       {/* New Chat Modal */}
       {showNewChatModal && (
-        <div className="modal-overlay" onClick={() => setShowNewChatModal(false)}>
+        <div
+          className="modal-overlay"
+          onClick={() => setShowNewChatModal(false)}
+        >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>Start New Chat</h3>
             <input
@@ -613,7 +673,10 @@ const handleFileDownload = async (fileId, fileName) => {
               onKeyPress={(e) => e.key === "Enter" && startNewChat()}
             />
             <div className="modal-actions">
-              <button onClick={() => setShowNewChatModal(false)} className="btn-secondary">
+              <button
+                onClick={() => setShowNewChatModal(false)}
+                className="btn-secondary"
+              >
                 Cancel
               </button>
               <button onClick={startNewChat} className="btn-primary">
