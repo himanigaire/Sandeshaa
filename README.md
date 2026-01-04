@@ -1,6 +1,6 @@
 # 🔐 Sandeshaa
 
-**Sandeshaa** (संदेशा - meaning "message" in Nepali) is a secure, end-to-end encrypted messaging application with cross-platform support for Web and Mobile.
+**Sandeshaa** (संदेश - meaning "message" in Nepali) is a secure, end-to-end encrypted messaging application with cross-platform support for Web and Mobile.
 
 ---
 
@@ -8,19 +8,19 @@
 
 - [Overview](#-overview)
 - [Features](#-features)
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Installation & Setup](#installation--setup)
-  - [Prerequisites](#prerequisites)
-  - [Backend Setup](#backend-setup)
-  - [Frontend (Web) Setup](#frontend-web-setup)
-  - [Mobile App Setup](#mobile-app-setup)
-- [API Endpoints](#api-endpoints)
-- [Security Features](#security-features)
-- [Configuration](#configuration)
-- [Contributing](#contributing)
-- [License](#license)
+- [Architecture](#-architecture)
+- [Tech Stack](#-tech-stack)
+- [Project Structure](#-project-structure)
+- [Installation & Setup](#-installation--setup)
+  - [Prerequisites](#-prerequisites)
+  - [Backend Setup](#-backend-setup)
+  - [Frontend (Web) Setup](#-frontend-web-setup)
+  - [Mobile App Setup](#-mobile-app-setup)
+- [API Endpoints](#-api-endpoints)
+- [Security Features](#-security-features)
+- [Configuration](#-configuration)
+- [Contributing](#-contributing)
+- [License](#-license)
 
 ---
 
