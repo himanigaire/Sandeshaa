@@ -11,6 +11,21 @@ import {
 } from "./crypto";
 import FileUpload from "./components/FileUpload";
 
+// Toast notification helper
+function showToast(message, type = 'success') {
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `
+    <span>${type === 'success' ? '✓' : '✕'}</span>
+    <span>${message}</span>
+  `;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.remove();
+  }, 3000);
+}
+
 function App() {
   // Auth / identity state
   const [identityKeys, setIdentityKeys] = useState(null);
@@ -25,12 +40,12 @@ function App() {
   const [wsStatus, setWsStatus] = useState("Disconnected");
 
   // Chat list management
-  const [chats, setChats] = useState({}); // { username: { messages: [], unread: 0, lastMessage: "" } }
-  const [activeChat, setActiveChat] = useState(null); // Currently selected chat username
+  const [chats, setChats] = useState({});
+  const [activeChat, setActiveChat] = useState(null);
   const [messageText, setMessageText] = useState("");
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [newChatUsername, setNewChatUsername] = useState("");
-  const [selectedFile, setSelectedFile] = useState(null);  // For file upload
+  const [selectedFile, setSelectedFile] = useState(null);
 
   const userKeyCache = useRef({});
   const messagesEndRef = useRef(null);
@@ -128,7 +143,25 @@ function App() {
             direction: "incoming",
             created_at: data.created_at,
           });
-        } else if (data.type === "sent") {
+        } else if (data.type === "file_message") {
+          // ✅ ADD THIS: Handle incoming file notification
+          const fromUser = data.from;
+          console.log("Received file from", fromUser, data);
+    
+          addMessageToChat(fromUser, {
+            id: data.id,
+            from: fromUser,
+            to: username,
+            text: `📎 ${data.filename}`,
+            isFile: true,
+            fileId: data.file_id,
+            fileName: data.filename,
+            fileSize: data.file_size,
+            direction: "incoming",
+            created_at: data.created_at,
+          });
+        }
+        else if (data.type === "sent") {
           console.log("Message acknowledged by server:", data);
         } else if (data.type === "error") {
           console.error("Server error:", data.message);
@@ -187,7 +220,7 @@ function App() {
     if (!trimmed) return;
 
     if (trimmed === username) {
-      alert("You can't chat with yourself!");
+      showToast("You can't chat with yourself!", "error");
       return;
     }
 
@@ -226,11 +259,11 @@ function App() {
   const handleRegister = async (e) => {
     e.preventDefault();
     if (!identityKeys) {
-      alert("Keys not ready yet, please wait a second and try again.");
+      showToast("Keys not ready yet, please wait", "error");
       return;
     }
     if (!authUsername || !authPassword) {
-      alert("Please enter username and password");
+      showToast("Please enter username and password", "error");
       return;
     }
 
@@ -241,20 +274,18 @@ function App() {
         identityPublicKey: identityKeys.publicKeyBase64,
         prekeyPublic: identityKeys.publicKeyBase64,
       });
-      alert("Registration successful! Now log in.");
+      showToast("Registration successful! Now log in");
       setIsRegisterMode(false);
     } catch (err) {
       console.error(err);
-      alert(
-        "Registration failed (maybe username already taken). Check console."
-      );
+      showToast("Registration failed (username might be taken)", "error");
     }
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!authUsername || !authPassword) {
-      alert("Please enter username and password");
+      showToast("Please enter username and password", "error");
       return;
     }
     try {
@@ -265,9 +296,10 @@ function App() {
       setToken(data.access_token);
       setUsername(authUsername);
       connectWebSocket(data.access_token);
+      showToast("Login successful!");
     } catch (err) {
       console.error(err);
-      alert("Login failed. Check console for details.");
+      showToast("Login failed. Check your credentials", "error");
     }
   };
 
@@ -275,16 +307,17 @@ function App() {
     e.preventDefault();
 
     if (!ws || ws.readyState !== WebSocket.OPEN) {
-      alert("WebSocket not connected.");
+      showToast("WebSocket not connected", "error");
       return;
     }
 
     if (!identityKeys) {
-      alert("Identity keys not ready.");
+      showToast("Identity keys not ready", "error");
       return;
     }
+    
     if (!activeChat) {
-      alert("Select a chat first.");
+      showToast("Select a chat first", "error");
       return;
     }
 
@@ -325,18 +358,24 @@ function App() {
           created_at: new Date().toISOString(),
         });
 
+        // Clear file selection
         setSelectedFile(null);
-        alert("File sent successfully!");
+        const fileInput = document.getElementById('file-input');
+        if (fileInput) {
+          fileInput.value = '';
+        }
+        
+        // Show success toast
+        showToast("File sent successfully");
+        
       } catch (err) {
         console.error("Error sending file:", err);
-        alert(
-          "Error sending file: " + (err.response?.data?.detail || err.message)
-        );
+        showToast("Error sending file: " + (err.response?.data?.detail || err.message), "error");
       }
       return;
     }
 
-    // Handle text message (existing code)
+    // Handle text message
     const trimmed = messageText.trim();
     if (!trimmed) return;
 
@@ -368,7 +407,7 @@ function App() {
       setMessageText("");
     } catch (err) {
       console.error("Error sending message:", err);
-      alert("Error sending message. See console.");
+      showToast("Error sending message", "error");
     }
   };
 
@@ -399,10 +438,10 @@ function App() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
 
-      alert("File downloaded successfully!");
+      showToast("File downloaded successfully");
     } catch (err) {
       console.error("Error downloading file:", err);
-      alert("Error downloading file. Check console.");
+      showToast("Error downloading file", "error");
     }
   };
 
@@ -634,6 +673,7 @@ function App() {
                 <FileUpload
                   onFileSelect={setSelectedFile}
                   disabled={!activeChat}
+                  selectedFile={selectedFile}
                 />
                 <input
                   type="text"

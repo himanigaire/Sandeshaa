@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 
 const BLOCKED_EXTENSIONS = [
   '.exe', '.dll', '.bat', '.cmd', '.com', '.scr', '.msi',
@@ -7,10 +7,7 @@ const BLOCKED_EXTENSIONS = [
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-const FileUpload = ({ onFileSelect, disabled }) => {
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [error, setError] = useState('');
-
+const FileUpload = ({ onFileSelect, disabled, selectedFile }) => {
   const validateFile = (file) => {
     if (file.size > MAX_FILE_SIZE) {
       return `File too large! Maximum size is ${MAX_FILE_SIZE / (1024 * 1024)}MB`;
@@ -26,43 +23,49 @@ const FileUpload = ({ onFileSelect, disabled }) => {
       return '⚠️ This file type is not allowed for security reasons!';
     }
 
-    if (fileName.includes('..') || fileName.includes('/') || fileName.includes('\\')) {
-      return 'Invalid filename!';
-    }
-
     return null;
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    setError('');
     
     if (file) {
+      console.log('File selected:', file.name); // Debug log
+      
       const validationError = validateFile(file);
       
       if (validationError) {
-        setError(validationError);
-        setSelectedFile(null);
-        e.target.value = '';
         alert(validationError);
+        e.target.value = '';
+        onFileSelect(null);
         return;
       }
 
-      setSelectedFile(file);
       onFileSelect(file);
     }
   };
 
-  const handleClear = () => {
-    setSelectedFile(null);
-    setError('');
+  const handleClear = (e) => {
+    e.stopPropagation();
     onFileSelect(null);
-    // Reset file input
-    document.getElementById('file-input').value = '';
+    const fileInput = document.getElementById('file-input');
+    if (fileInput) {
+      fileInput.value = '';
+    }
   };
 
+  // Clear file input when selectedFile becomes null
+  useEffect(() => {
+    if (!selectedFile) {
+      const fileInput = document.getElementById('file-input');
+      if (fileInput) {
+        fileInput.value = '';
+      }
+    }
+  }, [selectedFile]);
+
   return (
-    <div className="file-upload">
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
       <input
         type="file"
         id="file-input"
@@ -71,38 +74,63 @@ const FileUpload = ({ onFileSelect, disabled }) => {
         style={{ display: 'none' }}
         accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.txt,.zip,.mp3,.mp4"
       />
-      <label htmlFor="file-input" style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}>
-        <span
-          style={{
-            display: 'inline-block',
-            padding: '0.625rem 1rem',
-            background: disabled ? '#e0e0e0' : 'white',
-            color: disabled ? '#999' : '#667eea',
-            border: '2px solid',
-            borderColor: disabled ? '#ccc' : '#667eea',
-            borderRadius: '8px',
-            fontSize: '0.9rem',
-            fontWeight: '600',
-            cursor: disabled ? 'not-allowed' : 'pointer',
-            userSelect: 'none',
-          }}
-        >
-          📎 Attach
-        </span>
-      </label>
       
-      {selectedFile && (
-        <div className="selected-file">
-          <span className="file-name">
-            {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
+      {!selectedFile ? (
+        <label htmlFor="file-input" style={{ cursor: disabled ? 'not-allowed' : 'pointer', margin: 0 }}>
+          <span
+            style={{
+              display: 'inline-block',
+              padding: '0.625rem 1rem',
+              background: disabled ? '#e0e0e0' : 'white',
+              color: disabled ? '#999' : '#667eea',
+              border: '2px solid',
+              borderColor: disabled ? '#ccc' : '#667eea',
+              borderRadius: '8px',
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              cursor: disabled ? 'not-allowed' : 'pointer',
+              userSelect: 'none',
+            }}
+          >
+            📎 Attach File
           </span>
-          <button onClick={handleClear} className="btn-clear-file" type="button">
+        </label>
+      ) : (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          padding: '0.5rem 0.75rem',
+          background: '#f0f0f0',
+          borderRadius: '8px',
+          fontSize: '0.85rem',
+        }}>
+          <span style={{ color: '#333', fontWeight: '500' }}>
+            📎 {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
+          </span>
+          <button
+            onClick={handleClear}
+            type="button"
+            style={{
+              background: '#dc3545',
+              color: 'white',
+              border: 'none',
+              borderRadius: '50%',
+              width: '20px',
+              height: '20px',
+              cursor: 'pointer',
+              fontSize: '0.8rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              lineHeight: '1',
+              padding: 0,
+            }}
+          >
             ✕
           </button>
         </div>
       )}
-      
-      {error && <div className="file-error">{error}</div>}
     </div>
   );
 };

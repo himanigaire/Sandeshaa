@@ -8,11 +8,15 @@ from datetime import datetime, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit 
 from jose import JWTError, jwt
-from typing import Dict
+from typing import Dict , List
 import os
 import shutil
 import mimetypes
 from pathlib import Path
+import magic
+from dotenv import load_dotenv
+load_dotenv()
+from sqlalchemy import or_, and_
 
 from database import Base, engine, SessionLocal
 import models
@@ -23,6 +27,7 @@ from schemas import (
     TokenResponse,
     PublicKeysResponse,
     UserInfoResponse,
+    UpdatePublicKeyRequest,
 )
 
 # Create tables if they don't exist
@@ -147,6 +152,97 @@ def validate_file(file: UploadFile) -> tuple[bool, str]:
     if any(pattern in file.filename for pattern in suspicious_patterns):
         return False, "Invalid characters in filename"
     
+    # # ✅ NEW: Check 5: Validate file content using magic bytes
+    # try:
+    #     # Read first 2048 bytes for magic byte detection
+    #     file.file.seek(0)
+    #     file_header = file.file.read(2048)
+    #     file.file.seek(0)  # Reset for later use
+        
+    #     # Detect actual file type using magic bytes
+    #     mime = magic.Magic(mime=True)
+    #     detected_mime = mime.from_buffer(file_header)
+        
+    #     print(f"🔍 File: {file.filename}")
+    #     print(f"📄 Extension: {file_ext}")
+    #     print(f"🎯 Declared MIME: {file.content_type}")
+    #     print(f"🔬 Detected MIME (magic bytes): {detected_mime}")
+        
+    #     # Map extensions to expected MIME types
+    #     allowed_mime_types = {
+    #         # Images
+    #         '.jpg': ['image/jpeg'],
+    #         '.jpeg': ['image/jpeg'],
+    #         '.png': ['image/png'],
+    #         '.gif': ['image/gif'],
+    #         '.webp': ['image/webp'],
+    #         '.bmp': ['image/bmp', 'image/x-ms-bmp'],
+    #         '.svg': ['image/svg+xml', 'text/xml', 'text/plain'],
+            
+    #         # Documents
+    #         '.pdf': ['application/pdf'],
+    #         '.doc': ['application/msword', 'application/x-ole-storage'],
+    #         '.docx': ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/zip'],
+    #         '.txt': ['text/plain'],
+    #         '.rtf': ['application/rtf', 'text/rtf'],
+    #         '.odt': ['application/vnd.oasis.opendocument.text', 'application/zip'],
+            
+    #         # Spreadsheets
+    #         '.xls': ['application/vnd.ms-excel', 'application/x-ole-storage'],
+    #         '.xlsx': ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/zip'],
+    #         '.csv': ['text/csv', 'text/plain'],
+    #         '.ods': ['application/vnd.oasis.opendocument.spreadsheet', 'application/zip'],
+            
+    #         # Presentations
+    #         '.ppt': ['application/vnd.ms-powerpoint', 'application/x-ole-storage'],
+    #         '.pptx': ['application/vnd.openxmlformats-officedocument.presentationml.presentation', 'application/zip'],
+    #         '.odp': ['application/vnd.oasis.opendocument.presentation', 'application/zip'],
+            
+    #         # Archives
+    #         '.zip': ['application/zip'],
+    #         '.rar': ['application/x-rar', 'application/x-rar-compressed'],
+    #         '.7z': ['application/x-7z-compressed'],
+            
+    #         # Media
+    #         '.mp3': ['audio/mpeg'],
+    #         '.mp4': ['video/mp4'],
+    #         '.wav': ['audio/wav', 'audio/x-wav'],
+    #         '.avi': ['video/x-msvideo'],
+    #         '.mov': ['video/quicktime'],
+    #     }
+        
+    #     expected_mimes = allowed_mime_types.get(file_ext, [])
+        
+    #     # Check if detected MIME matches expected types for this extension
+    #     if expected_mimes and detected_mime not in expected_mimes:
+    #         # Special case: Microsoft Office files (docx, xlsx, pptx) are actually ZIP files
+    #         if file_ext in ['.docx', '.xlsx', '.pptx', '.odt', '.ods', '.odp'] and detected_mime == 'application/zip':
+    #             print("✅ Office document validated (ZIP container)")
+    #             pass  # This is okay
+    #         else:
+    #             print(f"❌ MIME mismatch! Extension says {file_ext}, but content is {detected_mime}")
+    #             return False, f"File type mismatch! File extension is {file_ext} but content appears to be {detected_mime}. Possible spoofing attempt."
+    #     else:
+    #         print("✅ File type validated via magic bytes")
+        
+    #     # Extra check: Block executable files by magic bytes
+    #     dangerous_mime_patterns = [
+    #         'application/x-executable',
+    #         'application/x-dosexec',
+    #         'application/x-msdownload',
+    #         'application/x-msdos-program',
+    #         'application/x-sh',
+    #         'application/x-shellscript',
+    #     ]
+        
+    #     if any(pattern in detected_mime for pattern in dangerous_mime_patterns):
+    #         return False, "Executable files are not allowed"
+        
+    # except Exception as e:
+    #     print(f"⚠️ Magic byte validation warning: {e}")
+    #     # Don't fail if magic library has issues, just log warning
+    #     print("⚠️ Continuing without magic byte validation")
+    
     return True, "OK"
 
 # ----------------- BASIC TEST ENDPOINTS ----------------- #
@@ -225,6 +321,173 @@ def read_me(current_user: models.User = Depends(get_current_user)):
     return UserInfoResponse(id=current_user.id, username=current_user.username)
 
 
+@app.put("/me/public-key")
+def update_public_key(
+    req: UpdatePublicKeyRequest,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Update the current user's identity_public_key.
+    Call this after login to sync device keys with server.
+    """
+    current_user.identity_public_key = req.identity_public_key
+    current_user.prekey_public = req.identity_public_key  # Keep in sync
+    db.commit()
+    return {"status": "ok", "message": "Public key updated"}
+
+@app.get("/conversations")
+def get_conversations(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Return list of all users the current user has exchanged messages with,
+    along with the most recent message timestamp.
+    """
+    # Get all unique users the current user has messaged
+    sent_to = (
+        db.query(models.Message.to_user_id)
+        .filter(models.Message.from_user_id == current_user.id)
+        .distinct()
+    )
+    
+    received_from = (
+        db.query(models.Message.from_user_id)
+        .filter(models.Message.to_user_id == current_user.id)
+        .distinct()
+    )
+    
+    # Combine both queries
+    all_user_ids = set()
+    for row in sent_to:
+        all_user_ids.add(row[0])
+    for row in received_from:
+        all_user_ids.add(row[0])
+    
+    # Get user details and last message for each conversation
+    conversations = []
+    for user_id in all_user_ids:
+        other_user = db.query(models.User).filter(models.User.id == user_id).first()
+        if not other_user:
+            continue
+            
+        # Get the most recent message in this conversation
+        last_message = (
+            db.query(models.Message)
+            .filter(
+                or_(
+                    and_(
+                        models.Message.from_user_id == current_user.id,
+                        models.Message.to_user_id == user_id,
+                    ),
+                    and_(
+                        models.Message.from_user_id == user_id,
+                        models.Message.to_user_id == current_user.id,
+                    ),
+                )
+            )
+            .order_by(models.Message.created_at.desc())
+            .first()
+        )
+        
+        if last_message:
+            conversations.append({
+                "username": other_user.username,
+                "last_message_time": last_message.created_at.isoformat() if last_message.created_at else None,
+            })
+    
+    # Sort by most recent
+    conversations.sort(key=lambda x: x["last_message_time"] or "", reverse=True)
+    
+    return conversations
+
+@app.get("/messages/{other_username}")
+def get_messages_with_user(
+    other_username: str,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Return the last 100 messages between current_user and other_username.
+    Only ciphertext is returned (still end-to-end encrypted).
+    """
+    other = db.query(models.User).filter(models.User.username == other_username).first()
+    if not other:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    msgs = (
+        db.query(models.Message)
+        .filter(
+            or_(
+                and_(
+                    models.Message.from_user_id == current_user.id,
+                    models.Message.to_user_id == other.id,
+                ),
+                and_(
+                    models.Message.from_user_id == other.id,
+                    models.Message.to_user_id == current_user.id,
+                ),
+            )
+        )
+        .order_by(models.Message.created_at.desc())
+        .limit(100)
+        .all()
+    )
+
+    return [
+        {
+            "id": m.id,
+            "from_user_id": m.from_user_id,
+            "to_user_id": m.to_user_id,
+            "ciphertext": m.ciphertext,
+            "created_at": m.created_at.isoformat() if m.created_at else None,
+        }
+        for m in msgs
+    ]
+
+
+@app.delete("/messages/{username}")
+def delete_messages_with_user(
+    username: str,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Delete all messages between the current user and the specified user.
+    This deletes messages in both directions (sent and received).
+    """
+    # Find the other user
+    other_user = db.query(models.User).filter(models.User.username == username).first()
+    if not other_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    
+    # Delete all messages between these two users
+    deleted_count = db.query(models.Message).filter(
+        or_(
+            and_(
+                models.Message.from_user_id == current_user.id,
+                models.Message.to_user_id == other_user.id,
+            ),
+            and_(
+                models.Message.from_user_id == other_user.id,
+                models.Message.to_user_id == current_user.id,
+            ),
+        )
+    ).delete(synchronize_session=False)
+    
+    db.commit()
+    
+    return {
+        "status": "ok",
+        "message": f"Deleted {deleted_count} messages",
+        "deleted_count": deleted_count,
+    }
+
+
 @app.get("/users/{username}/keys", response_model=PublicKeysResponse)
 def get_user_keys(username: str, db: Session = Depends(get_db)):
     """
@@ -285,7 +548,7 @@ async def upload_file(
         
         # Create database record
         file_message = models.FileMessage(
-            from_user_id=current_user.id,  # treating as object
+            from_user_id=current_user.id,
             to_user_id=recipient.id,
             filename=safe_filename,
             stored_filename=stored_filename,
@@ -297,6 +560,23 @@ async def upload_file(
         db.add(file_message)
         db.commit()
         db.refresh(file_message)
+
+         # ✅ ADD THIS: Notify recipient via WebSocket if they're online
+        recipient_ws = active_connections.get(recipient.id)
+        if recipient_ws:
+            try:
+                await recipient_ws.send_json({
+                    "type": "file_message",
+                    "id": file_message.id,
+                    "from": current_user.username,
+                    "file_id": file_message.id,
+                    "filename": safe_filename,
+                    "file_size": file_message.file_size,
+                    "file_type": file.content_type,
+                    "created_at": file_message.created_at.isoformat() if file_message.created_at else None,
+                })
+            except Exception as e:
+                print(f"Failed to notify recipient: {e}")
         
         return {
             "message": "File uploaded successfully",
@@ -429,6 +709,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str | None = None):
             msg_type = data.get("type")
 
             if msg_type == "send_message":
+                client_id = data.get("client_id")
                 to_username = data.get("to")
                 ciphertext = data.get("ciphertext")
 
@@ -496,6 +777,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str | None = None):
                         "id": new_msg.id,
                         "to": to_username,
                         "delivered": new_msg.delivered,
+                        "client_id": client_id,
                     }
                 )
 

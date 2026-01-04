@@ -1,12 +1,19 @@
-# Backend
+# Backend (Python)
 venv/
 __pycache__/
-*.db
+*.log
+
+# Database / secrets
+.env
+.env.*
+
+# MySQL backups
+*.sql
+*.dump
 
 # Frontend
 node_modules/
 dist/
-.env
 
 # macOS
 .DS_Store

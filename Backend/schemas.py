@@ -28,3 +28,10 @@ class PublicKeysResponse(BaseModel):
 class UserInfoResponse(BaseModel):
     id: int
     username: str
+
+
+class UpdatePublicKeyRequest(BaseModel):
+    identity_public_key: str
+
+class UpdatePublicKeyRequest(BaseModel):
+    identity_public_key: str
