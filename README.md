@@ -6,8 +6,8 @@
 
 ## 📋 Table of Contents
 
-- [Overview](#overview)
-- [Features](#features)
+- [Overview](#-overview)
+- [Features](#-features)
 - [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
