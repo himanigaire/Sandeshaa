@@ -1,11 +1,14 @@
 # Backend (Python)
 venv/
 __pycache__/
+*.pyc
+*.pyo
 *.log
 
 # Database / secrets
 .env
 .env.*
+*.env.local
 
 # MySQL backups
 *.sql
@@ -15,5 +18,40 @@ __pycache__/
 node_modules/
 dist/
 
+# Mobile (General - ADD MORE BASED ON YOUR FRAMEWORK)
+*.apk
+*.ipa
+*.aab
+
+# iOS
+ios/Pods/
+ios/build/
+ios/.xcode.env.local
+*.xcuserdata
+*.xcworkspace/xcuserdata/
+DerivedData/
+
+# Android
+android/app/build/
+android/.gradle/
+android/local.properties
+*.keystore
+!debug.keystore
+
+# React Native specific (if applicable)
+.expo/
+.expo-shared/
+
 # macOS
 .DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+.cache/
