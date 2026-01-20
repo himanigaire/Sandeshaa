@@ -693,7 +693,7 @@ Contributions are welcome! Here's how you can help:
 
 ## 📄 License
 
-This project is developed as part of a **7th Semester Computer Science Project** at [Your University].
+This project is developed as part of a **7th Semester Computer Science Project** at University of West of England.
 
 **Status:** Academic Project (Single Developer)
 
@@ -736,8 +736,8 @@ Special thanks to the following open-source projects and resources:
 
 For questions, issues, or suggestions:
 
-- **GitHub Issues:** [Create an issue](https://github.com/himanigaire/Sandeshaa/issues)
-- **Email:** [Your Email]
+- **GitHub Issues:** 
+- **Email:** hi.gaire3@gmail.com
 - **Documentation:** See `API_DOCUMENTATION.md` for detailed API reference
 
 ---
@@ -758,5 +758,3 @@ Future enhancements planned:
 - [ ] One-time prekey implementation (Signal Protocol)
 
 ---
-
-**Made with ❤️ for secure communication**
