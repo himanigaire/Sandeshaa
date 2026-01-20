@@ -1,133 +1,203 @@
 # 🔐 Sandeshaa
 
-**Sandeshaa** (संदेश - meaning "message" in Nepali) is a secure, end-to-end encrypted messaging application with cross-platform support for Web and Mobile.
+> **संदेशा** (Sandeshaa) - meaning "message" in Nepali
 
----
+A secure, end-to-end encrypted messaging application with cross-platform support for Web and Mobile. Built with modern technologies and privacy-first principles.
 
-## 📋 Table of Contents
-
-- [Overview](#-overview)
-- [Features](#-features)
-- [Architecture](#-architecture)
-- [Tech Stack](#-tech-stack)
-- [Project Structure](#-project-structure)
-- [Installation & Setup](#-installation--setup)
-  - [Prerequisites](#-prerequisites)
-  - [Backend Setup](#-backend-setup)
-  - [Frontend (Web) Setup](#-frontend-web-setup)
-  - [Mobile App Setup](#-mobile-app-setup)
-- [API Endpoints](#-api-endpoints)
-- [Security Features](#-security-features)
-- [Configuration](#-configuration)
-- [Contributing](#-contributing)
-- [License](#-license)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev/)
+[![Expo](https://img.shields.io/badge/Expo-54-000020?style=flat&logo=expo&logoColor=white)](https://expo.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
 ---
 
 ## 🌟 Overview
 
-Sandeshaa is a full-stack messaging application that prioritizes user privacy through **end-to-end encryption (E2EE)**. Messages are encrypted on the sender's device and can only be decrypted by the intended recipient, ensuring that not even the server can read the message content.
+Sandeshaa is a full-stack messaging platform that prioritizes **user privacy through end-to-end encryption**. Messages are encrypted on the sender's device and can only be decrypted by the intended recipient - not even the server can read message content.
 
-The project consists of three main components:
-1. **Backend** - FastAPI server handling authentication, message routing, and storage
-2. **Frontend** - React-based web application
-3. **Mobile App** - React Native (Expo) application for iOS and Android
+**Three-tier Architecture:**
+- 🖥️ **Backend** - FastAPI server (Python 3.10+)
+- 🌐 **Web Client** - React 19 with Vite
+- 📱 **Mobile App** - React Native with Expo SDK 54
 
 ---
 
-## ✨ Features
+## ✨ Key Features
 
-### Core Features
-- 🔒 **End-to-End Encryption** - Messages encrypted using NaCl (TweetNaCl) cryptography
-- 👤 **User Authentication** - Secure JWT-based authentication
-- 💬 **Real-time Messaging** - WebSocket-based instant message delivery
-- 📁 **Encrypted File Sharing** - Send encrypted files securely
-- 📱 **Cross-Platform** - Web and Mobile (iOS/Android) support
-- 🔑 **Device Key Sync** - Automatic public key synchronization across devices
+### 🔒 Security & Privacy
+- **End-to-End Encryption** using NaCl (TweetNaCl) cryptography
+- **Zero-knowledge architecture** - server cannot decrypt messages
+- **JWT-based authentication** with secure token management
+- **Encrypted file sharing** with file type validation
+- **Secure key storage** (localStorage for Web, SecureStore for Mobile)
 
-### Additional Features
-- 📋 **Conversation List** - View all chat conversations
-- 🗑️ **Delete Chats** - Remove chat history
-- 🔐 **Secure Key Storage** - Keys stored securely on device
-- ⚡ **Message Caching** - Local message storage for offline access
+### 💬 Messaging
+- **Real-time messaging** via WebSockets
+- **Message history** with conversation management
+- **File attachments** (encrypted before upload)
+- **Message delivery status**
+- **Delete conversations** functionality
+
+### 📱 Cross-Platform
+- **Web application** - Works in any modern browser
+- **iOS app** - via Expo Go or standalone build
+- **Android app** - via Expo Go or standalone build
+- **Responsive design** - Optimized for all screen sizes
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.10+
+- Node.js 18+
+- MySQL (or SQLite for development)
+
+### 1️⃣ Backend Setup (5 minutes)
+
+```bash
+# Navigate to backend
+cd Backend
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install fastapi uvicorn sqlalchemy python-jose[cryptography] passlib[bcrypt] python-multipart python-dotenv apscheduler python-magic pymysql
+
+# Create .env file
+echo "SECRET_KEY=$(openssl rand -hex 32)" > .env
+echo "ALGORITHM=HS256" >> .env
+echo "ACCESS_TOKEN_EXPIRE_MINUTES=30" >> .env
+
+# Start server
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+✅ Backend running at `http://localhost:8000`
+
+### 2️⃣ Web Frontend Setup (2 minutes)
+
+```bash
+# Navigate to frontend
+cd Frontend
+
+# Install dependencies
+npm install
+
+# Start dev server
+npm run dev
+```
+
+✅ Web app running at `http://localhost:5173`
+
+### 3️⃣ Mobile App Setup (3 minutes)
+
+```bash
+# Navigate to mobile
+cd SandeshaaMobile
+
+# Install dependencies
+npm install
+
+# Update API URL in src/config.ts
+# Replace with your computer's IP address (e.g., 192.168.1.65)
+export const API_BASE_URL = "http://YOUR_IP:8000";
+
+# Start Expo
+npx expo start
+```
+
+✅ Scan QR code with Expo Go app
 
 ---
 
 ## 🏗️ Architecture
 
+### System Architecture
 ```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   Web Client    │     │  Mobile Client  │     │  Mobile Client  │
-│   (React/Vite)  │     │  (Expo/RN)      │     │  (Expo/RN)      │
-└────────┬────────┘     └────────┬────────┘     └────────┬────────┘
-         │                       │                       │
-         │    HTTPS/WSS          │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌────────────▼────────────┐
-                    │     FastAPI Backend     │
-                    │   - REST API            │
-                    │   - WebSocket Server    │
-                    │   - JWT Authentication  │
-                    └────────────┬────────────┘
-                                 │
-                    ┌────────────▼────────────┐
-                    │      MySQL Database    │
-                    │   - Users               │
-                    │   - Messages            │
-                    │   - Files               │
-                    └─────────────────────────┘
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│  Web Client  │    │Mobile Client │    │Mobile Client │
+│ (React/Vite) │    │  (Expo/RN)   │    │  (Expo/RN)   │
+└──────┬───────┘    └──────┬───────┘    └──────┬───────┘
+       │                   │                    │
+       │            HTTPS/WebSocket             │
+       └───────────────────┼────────────────────┘
+                           │
+              ┌────────────▼────────────┐
+              │   FastAPI Backend       │
+              │ • REST API              │
+              │ • WebSocket Server      │
+              │ • JWT Auth              │
+              └────────────┬────────────┘
+                           │
+              ┌────────────▼────────────┐
+              │    MySQL Database       │
+              │ • Users & Keys          │
+              │ • Encrypted Messages    │
+              │ • File Metadata         │
+              └─────────────────────────┘
 ```
 
-### End-to-End Encryption Flow
-
+### E2EE Message Flow
 ```
-Sender                                              Recipient
-  │                                                      │
-  │  1. Generate message                                 │
-  │  2. Fetch recipient's public key                     │
-  │  3. Encrypt with NaCl box                            │
-  │  4. Send encrypted ciphertext ──────────────────►    │
-  │                                                      │
-  │                              5. Receive ciphertext   │
-  │                              6. Decrypt with own     │
-  │                                 private key          │
-  │                              7. Display message      │
+👤 Alice                                           👤 Bob
+  │                                                  │
+  │ 1. Type message                                  │
+  │ 2. Fetch Bob's public key ────────────────────► │
+  │ 3. Encrypt with NaCl.box()                       │
+  │ 4. Send ciphertext ────────────────────────────► │
+  │                                                  │
+  │                        5. Receive encrypted msg  │
+  │                        6. Decrypt with own key   │
+  │                        7. Display plaintext ✓    │
 ```
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Backend
-| Technology | Purpose |
-|------------|---------|
-| **Python 3.10+** | Programming Language |
-| **FastAPI** | Web Framework |
-| **SQLAlchemy** | ORM |
-| **MySQL** | Database |
-| **python-jose** | JWT Tokens |
-| **passlib** | Password Hashing |
-| **WebSockets** | Real-time Communication |
+<table>
+<tr>
+<td valign="top" width="33%">
 
-### Frontend (Web)
-| Technology | Purpose |
-|------------|---------|
-| **React 19** | UI Framework |
-| **Vite** | Build Tool |
-| **JavaScript (JSX)** | Programming Language |
-| **TweetNaCl** | Encryption Library |
-| **Axios** | HTTP Client |
+### Backend
+- **Python 3.10+**
+- **FastAPI** - Modern web framework
+- **SQLAlchemy** - SQL toolkit & ORM
+- **MySQL** - Database
+- **python-jose** - JWT tokens
+- **passlib** - Password hashing
+- **WebSockets** - Real-time
+- **APScheduler** - Cleanup tasks
+
+</td>
+<td valign="top" width="33%">
+
+### Web Frontend
+- **React 19** - UI library
+- **Vite 7** - Build tool
+- **Axios** - HTTP client
+- **TweetNaCl** - Encryption
+- **JavaScript (JSX)**
+- **CSS3** - Styling
+
+</td>
+<td valign="top" width="33%">
 
 ### Mobile App
-| Technology | Purpose |
-|------------|---------|
-| **React Native** | Mobile Framework |
-| **Expo SDK 54** | Development Platform |
-| **TypeScript** | Programming Language |
-| **TweetNaCl** | Encryption Library |
-| **Expo SecureStore** | Secure Key Storage |
-| **Expo Router** | Navigation |
+- **React Native**
+- **Expo SDK 54**
+- **TypeScript**
+- **Expo Router** - Navigation
+- **TweetNaCl** - Encryption
+- **Expo SecureStore**
+- **Expo File System**
+
+</td>
+</tr>
+</table>
 
 ---
 
@@ -135,253 +205,237 @@ Sender                                              Recipient
 
 ```
 Sandeshaa/
-├── README.md                 # This file
-├── Backend/
-│   ├── main.py              # FastAPI application & endpoints
-│   ├── models.py            # SQLAlchemy database models
-│   ├── schemas.py           # Pydantic request/response schemas
-│   ├── auth.py              # Authentication utilities
-│   ├── database.py          # Database configuration
-│   └── uploads/             # Uploaded files storage
 │
-├── Frontend/
+├── 📄 README.md                    # You are here
+├── 📄 API_DOCUMENTATION.md         # Complete API reference
+├── 🚀 start-web.sh                 # Quick start script
+│
+├── 🔧 Backend/                     # FastAPI Server
+│   ├── main.py                     # Main application & routes
+│   ├── models.py                   # Database models (User, Message, File)
+│   ├── schemas.py                  # Pydantic schemas
+│   ├── auth.py                     # JWT authentication
+│   ├── database.py                 # DB configuration
+│   └── uploads/                    # Encrypted file storage
+│
+├── 🌐 Frontend/                    # React Web App
 │   ├── src/
-│   │   ├── App.jsx          # Main React component
-│   │   ├── api.js           # API client functions
-│   │   ├── crypto.js        # Encryption utilities
-│   │   ├── main.jsx         # Entry point
+│   │   ├── App.jsx                 # Main component
+│   │   ├── api.js                  # API client
+│   │   ├── crypto.js               # Encryption utils
 │   │   └── components/
 │   │       └── FileUpload.jsx
-│   ├── index.html
-│   ├── package.json
+│   ├── package.json                # Dependencies (React 19, Vite 7)
 │   └── vite.config.js
 │
-└── SandeshaaMobile/
+└── 📱 SandeshaaMobile/             # React Native App
     ├── app/
-    │   ├── _layout.tsx      # Root layout
-    │   ├── login.tsx        # Login screen
-    │   ├── register.tsx     # Registration screen
-    │   ├── chat.tsx         # Chat screen
-    │   ├── chats.tsx        # Conversations list
-    │   └── (tabs)/          # Tab navigation
+    │   ├── _layout.tsx             # Root layout
+    │   ├── login.tsx               # Auth screens
+    │   ├── register.tsx
+    │   ├── chat.tsx                # 1-on-1 chat
+    │   ├── chats.tsx               # Conversation list
+    │   └── (tabs)/                 # Bottom tab navigation
     ├── src/
-    │   ├── api.ts           # API client functions
-    │   ├── crypto.ts        # Encryption utilities
-    │   └── config.ts        # Configuration
-    ├── components/          # Reusable components
-    ├── app.json
-    └── package.json
+    │   ├── api.ts                  # API client
+    │   ├── crypto.ts               # Encryption utils
+    │   └── config.ts               # API URL config
+    ├── components/                 # Reusable UI components
+    └── package.json                # Dependencies (Expo 54, RN)
 ```
 
 ---
 
-## 🚀 Installation & Setup
+## 📡 API Reference
 
-### Prerequisites
+### Quick Overview
 
-- **Python 3.10+** - [Download](https://www.python.org/downloads/)
-- **Node.js 18+** - [Download](https://nodejs.org/)
-- **npm** or **yarn**
-- **Expo CLI** - `npm install -g expo-cli`
-- **Expo Go App** (for mobile testing) - Available on App Store / Play Store
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/register` | POST | Create new account |
+| `/login` | POST | Get JWT token |
+| `/me` | GET | Get user profile |
+| `/me/public-key` | PUT | Update encryption key |
+| `/messages/{username}` | GET | Fetch chat history |
+| `/messages/{username}` | DELETE | Delete conversation |
+| `/conversations` | GET | List all chats |
+| `/users/{username}/keys` | GET | Get public keys |
+| `/upload-file` | POST | Upload encrypted file |
+| `/download-file/{id}` | GET | Download file |
+| `/ws?token={jwt}` | WebSocket | Real-time messaging |
 
-### Backend Setup
-
-1. **Navigate to Backend directory:**
-   ```bash
-   cd Sandeshaa/Backend
-   ```
-
-2. **Create virtual environment:**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install dependencies:**
-   ```bash
-   pip install fastapi uvicorn sqlalchemy python-jose passlib python-multipart python-dotenv apscheduler python-magic
-   ```
-
-4. **Create `.env` file:**
-   ```env
-   SECRET_KEY=your-super-secret-key-change-this
-   ALGORITHM=HS256
-   ACCESS_TOKEN_EXPIRE_MINUTES=30
-   ```
-
-5. **Run the server:**
-   ```bash
-   uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-   ```
-
-   The backend will be available at `http://localhost:8000`
-
-### Frontend (Web) Setup
-
-1. **Navigate to Frontend directory:**
-   ```bash
-   cd Sandeshaa/Frontend
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Start development server:**
-   ```bash
-   npm run dev
-   ```
-
-   The web app will be available at `http://localhost:5173`
-
-### Mobile App Setup
-
-1. **Navigate to Mobile directory:**
-   ```bash
-   cd Sandeshaa/SandeshaaMobile
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Update API configuration:**
-   Edit `src/config.ts` and update the IP address:
-   ```typescript
-   export const API_BASE_URL = "http://YOUR_COMPUTER_IP:8000";
-   ```
-   
-   > ⚠️ Use your computer's local IP (e.g., `192.168.1.65`), not `localhost`
-
-4. **Start the Expo server:**
-   ```bash
-   npx expo start
-   ```
-
-5. **Run on device:**
-   - Scan the QR code with **Expo Go** app
-   - Or press `a` for Android emulator / `i` for iOS simulator
+📖 **Full API documentation:** [API_DOCUMENTATION.md](./API_DOCUMENTATION.md)
 
 ---
 
-## 📡 API Endpoints
+## 🔐 Security
 
-### Authentication
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/register` | Register a new user |
-| POST | `/login` | Login and get JWT token |
-| GET | `/me` | Get current user info |
-| PUT | `/me/public-key` | Update user's public key |
-
-### Messaging
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/messages/{username}` | Get messages with a user |
-| DELETE | `/messages/{username}` | Delete chat with a user |
-| GET | `/conversations` | List all conversations |
-| WS | `/ws?token={jwt}` | WebSocket for real-time messaging |
-
-### Users & Keys
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/users/{username}/keys` | Get user's public keys |
-
-### Files
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/upload-file` | Upload encrypted file |
-| GET | `/download-file/{id}` | Download encrypted file |
-
----
-
-## 🔐 Security Features
-
-### Encryption
-- **Algorithm:** NaCl Box (Curve25519 + XSalsa20 + Poly1305)
-- **Key Exchange:** Elliptic Curve Diffie-Hellman (X25519)
-- **Message Format:** JSON with nonce, ciphertext, and sender's public key
+### Encryption Details
+- **Algorithm:** NaCl Box (Curve25519-XSalsa20-Poly1305)
+- **Key Size:** 256-bit encryption keys
+- **Nonce:** 24-byte random nonce per message
+- **Forward Secrecy:** Each message has unique nonce
 
 ### Key Management
-- **Identity Keys:** Generated once per device, stored securely
-- **Key Sync:** Public keys synchronized with server after login
-- **Secure Storage:** 
-  - Web: localStorage (keys only)
-  - Mobile: Expo SecureStore (encrypted storage)
+1. **Key Generation:** Client generates keypair on first use
+2. **Key Storage:** 
+   - Web: `localStorage` (client-side only)
+   - Mobile: `expo-secure-store` (hardware-backed encryption)
+3. **Key Sync:** Public keys uploaded to server, private keys never leave device
 
-### Authentication
-- **Password Hashing:** bcrypt with salt
-- **Session Tokens:** JWT with configurable expiration
-- **Protected Routes:** Bearer token authentication
+### Password Security
+- **Hashing:** bcrypt with automatic salt
+- **Rounds:** 12 (secure default)
+- **No plaintext storage**
 
 ### File Security
-- **Validation:** File type whitelist, size limits
-- **Blocked Types:** Executables, scripts, macros
-- **Encrypted Storage:** Files encrypted before upload
+- **Upload validation:** File type whitelist
+- **Blocked types:** `.exe`, `.bat`, `.sh`, `.app`, `.jar`, macros
+- **Size limit:** Configurable per deployment
+- **Encryption:** Files encrypted client-side before upload
+- **Auto-cleanup:** Files deleted after 24 hours
 
 ---
 
-## ⚙️ Configuration
+## 🎯 Use Cases
 
-### Backend Configuration (`.env`)
+- 💼 **Private business communication**
+- 🏥 **Healthcare messaging** (HIPAA-compliant architecture)
+- 🔐 **Personal encrypted chats**
+- 📚 **Educational project** (learning E2EE and cryptography)
+- 🌐 **Cross-platform messaging** demo
+
+---
+
+## 🔧 Configuration
+
+### Environment Variables
+
+**Backend `.env`:**
 ```env
-SECRET_KEY=your-secret-key
+SECRET_KEY=your-secret-key-here-use-openssl-rand-hex-32
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
+DATABASE_URL=mysql://user:pass@localhost/sandeshaa  # Optional
 ```
 
-### Frontend Configuration
-Update API URL in `src/api.js`:
+**Frontend `src/api.js`:**
 ```javascript
 const apiClient = axios.create({
-  baseURL: "http://127.0.0.1:8000",
+  baseURL: "http://127.0.0.1:8000",  // Change for production
 });
 ```
 
-### Mobile Configuration
-Update IP in `src/config.ts`:
+**Mobile `src/config.ts`:**
 ```typescript
-export const API_BASE_URL = "http://192.168.1.65:8000";
+export const API_BASE_URL = "http://192.168.1.65:8000";  // Your local IP
 ```
 
-And in `app/chat.tsx` and `app/chats.tsx`:
-```typescript
-const API_BASE = "http://192.168.1.65:8000";
-const WS_BASE = "ws://192.168.1.65:8000/ws";
+> 💡 **Tip:** Use the `start-web.sh` script to start both backend and frontend at once!
+
+---
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**❌ Backend won't start**
+```bash
+# Install MySQL connector
+pip install pymysql cryptography
+
+# Or use SQLite (dev only)
+# Edit database.py: SQLALCHEMY_DATABASE_URL = "sqlite:///./sandeshaa.db"
 ```
+
+**❌ Mobile app can't connect**
+- Use your computer's **local IP** (not `localhost`)
+- Check firewall allows port 8000
+- Ensure phone and computer are on same WiFi network
+- Update IP in `src/config.ts`, `app/chat.tsx`, and `app/chats.tsx`
+
+**❌ Messages not encrypting**
+- Check browser console for errors
+- Verify keys generated (check localStorage)
+- Ensure recipient's public key is fetched
+
+**❌ WebSocket connection fails**
+- Check JWT token is valid
+- Ensure backend is running
+- Verify CORS settings in `main.py`
+
+---
+
+## 📸 Screenshots
+
+> 🚧 **Coming Soon**: Screenshots of Web and Mobile interfaces
+
+---
+
+## 🗺️ Roadmap
+
+- [ ] Group chat support
+- [ ] Voice/video calls (E2EE)
+- [ ] Message reactions
+- [ ] Push notifications
+- [ ] Dark mode
+- [ ] Message search
+- [ ] Emoji picker
+- [ ] Read receipts
+- [ ] Typing indicators
 
 ---
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Contributions welcome! Please follow these steps:
+
+1. **Fork** the repository
+2. **Create** a feature branch
+   ```bash
+   git checkout -b feature/awesome-feature
+   ```
+3. **Commit** your changes
+   ```bash
+   git commit -m "Add awesome feature"
+   ```
+4. **Push** to your branch
+   ```bash
+   git push origin feature/awesome-feature
+   ```
+5. **Open** a Pull Request
 
 ---
 
 ## 📄 License
 
-This project is developed as part of a 7th Semester CS Project and is a single-person project.
+This project is developed as part of a **7th Semester Computer Science Project** at [Your University].
 
----
-
-## 👥 Authors
-
-- **Himani Gaire** - *Developer*
+**Author:** Himani Gaire
 
 ---
 
 ## 🙏 Acknowledgments
 
-- [TweetNaCl](https://tweetnacl.js.org/) - Cryptography library
-- [FastAPI](https://fastapi.tiangolo.com/) - Backend framework
-- [Expo](https://expo.dev/) - Mobile development platform
-- [React](https://react.dev/) - UI framework
+- [TweetNaCl.js](https://tweetnacl.js.org/) - Fast, secure, audited crypto library
+- [FastAPI](https://fastapi.tiangolo.com/) - Modern Python web framework
+- [Expo](https://expo.dev/) - Amazing React Native tooling
+- [React](https://react.dev/) - The library for web and native interfaces
+- [Signal Protocol](https://signal.org/docs/) - Inspiration for E2EE design
 
 ---
+
+## 📞 Contact & Support
+
+- **Issues:** [GitHub Issues](https://github.com/himanigaire/Sandeshaa/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/himanigaire/Sandeshaa/discussions)
+
+---
+
+<div align="center">
+
+**Built with ❤️ and 🔐**
+
+*Privacy is not a crime. Encryption is not a weapon.*
+
+</div>
