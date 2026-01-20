@@ -72,7 +72,7 @@ The project consists of three main components:
                     └────────────┬────────────┘
                                  │
                     ┌────────────▼────────────┐
-                    │      SQLite Database    │
+                    │      MySQL Database    │
                     │   - Users               │
                     │   - Messages            │
                     │   - Files               │
@@ -105,7 +105,7 @@ Sender                                              Recipient
 | **Python 3.10+** | Programming Language |
 | **FastAPI** | Web Framework |
 | **SQLAlchemy** | ORM |
-| **SQLite** | Database |
+| **MySQL** | Database |
 | **python-jose** | JWT Tokens |
 | **passlib** | Password Hashing |
 | **WebSockets** | Real-time Communication |
@@ -367,13 +367,13 @@ const WS_BASE = "ws://192.168.1.65:8000/ws";
 
 ## 📄 License
 
-This project is developed as part of a 7th Semester CS Project.
+This project is developed as part of a 7th Semester CS Project and is a single-person project.
 
 ---
 
 ## 👥 Authors
 
-- **Himani** - *Developer*
+- **Himani Gaire** - *Developer*
 
 ---
 
