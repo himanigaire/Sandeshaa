@@ -4,8 +4,7 @@ import * as SecureStore from "expo-secure-store";
 import { useEffect, useRef, useState } from "react";
 import { FlatList, Pressable, StyleSheet, TextInput, Alert, ActivityIndicator, LogBox } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
-import { Paths } from "expo-file-system";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -117,23 +116,30 @@ export default function ChatScreen() {
         return;
       }
 
-      const res = await fetch(
-        `${API_BASE}/messages/${encodeURIComponent(otherUsername)}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      // Fetch both text messages and file messages in parallel
+      const [textRes, fileRes] = await Promise.all([
+        fetch(
+          `${API_BASE}/messages/${encodeURIComponent(otherUsername)}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        ),
+        fetch(
+          `${API_BASE}/file-messages/${encodeURIComponent(otherUsername)}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+      ]);
 
-      if (!res.ok) {
-        const errorText = await res.text();
+      if (!textRes.ok) {
+        const errorText = await textRes.text();
         console.error("Failed to fetch messages:", errorText);
         setStatus("idle"); // Clear error state
         return;
       }
 
-      const data: ServerMessage[] = await res.json();
+      const data: ServerMessage[] = await textRes.json();
       const myId = parseJwtSub(token);
 
-      // Decrypt all messages
-      const ui: UiMessage[] = await Promise.all(
+      // Decrypt all text messages
+      const textMessages: UiMessage[] = await Promise.all(
         data.map(async (m) => {
           let plaintext = m.ciphertext;
           const isSentByMe = myId && m.from_user_id === myId;
@@ -170,21 +176,45 @@ export default function ChatScreen() {
           }
 
           return {
-            id: String(m.id),
+            id: `msg_${m.id}`,
             who: isSentByMe ? "me" : "other",
             text: plaintext,
             created_at: m.created_at,
-            status: "delivered",
+            status: "delivered" as const,
           };
         })
       );
 
-      setMessages(ui);
+      // Process file messages
+      let fileMessages: UiMessage[] = [];
+      if (fileRes.ok) {
+        const fileData = await fileRes.json();
+        fileMessages = fileData.map((f: any) => ({
+          id: `file_${f.id}`,
+          who: (myId && f.from_user_id === myId) ? "me" : "other",
+          text: `📎 ${f.filename}`,
+          isFile: true,
+          fileId: String(f.id),
+          fileName: f.filename,
+          fileSize: f.file_size,
+          created_at: f.created_at,
+          status: "delivered" as const,
+        }));
+      }
+
+      // Merge and sort by created_at (newest first)
+      const allMessages = [...textMessages, ...fileMessages].sort((a, b) => {
+        const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return dateB - dateA; // Newest first
+      });
+
+      setMessages(allMessages);
       setStatus("idle");
       
       // Update chats list with this conversation
-      if (ui.length > 0) {
-        await updateChatsList(otherUsername, ui[0].text, ui[0].created_at);
+      if (allMessages.length > 0) {
+        await updateChatsList(otherUsername, allMessages[0].text, allMessages[0].created_at);
       }
     } catch (e) {
       console.error("❌ FETCH ERROR:", e);
@@ -280,7 +310,7 @@ export default function ChatScreen() {
 
           setMessages((prev) => [
             {
-              id: String(data.id),
+              id: `msg_${data.id}`,
               who: "other",
               text: plaintext,
               created_at: data.created_at,
@@ -297,11 +327,11 @@ export default function ChatScreen() {
           
           setMessages((prev) => [
             {
-              id: String(data.id),
+              id: `file_${data.id}`,
               who: "other",
               text: `📎 ${data.filename}`,
               isFile: true,
-              fileId: data.file_id,
+              fileId: String(data.id),
               fileName: data.filename,
               fileSize: data.file_size,
               created_at: data.created_at,
@@ -327,7 +357,7 @@ export default function ChatScreen() {
               m.client_id === data.client_id
                 ? {
                     ...m,
-                    id: String(data.id),
+                    id: `msg_${data.id}`,
                     status: data.delivered ? "delivered" : "sent",
                   }
                 : m
@@ -463,7 +493,7 @@ export default function ChatScreen() {
       const encryptedPayload = await encryptFileForRecipient(bytes, recipientPublicKey);
 
       // Create a temporary file with encrypted content
-      const tempUri = Paths.cache + '/' + selectedFile.name + '.enc';
+      const tempUri = FileSystem.cacheDirectory + selectedFile.name + '.enc';
       await FileSystem.writeAsStringAsync(tempUri, encryptedPayload, {
         encoding: 'utf8',
       });
@@ -477,11 +507,11 @@ export default function ChatScreen() {
       // Add file message to chat
       setMessages((prev) => [
         {
-          id: String(result.file_id),
+          id: `file_${result.file_id}`,
           who: "me",
           text: `📎 ${selectedFile.name}`,
           isFile: true,
-          fileId: result.file_id,
+          fileId: String(result.file_id),
           fileName: selectedFile.name,
           fileSize: selectedFile.size,
           created_at: new Date().toISOString(),
@@ -509,14 +539,7 @@ export default function ChatScreen() {
       if (!token) throw new Error("No token");
 
       console.log("📥 Downloading file...");
-      const blob = await downloadFile(fileId, token);
-
-      // Convert blob to ArrayBuffer then to Uint8Array
-      const arrayBuffer = await blob.arrayBuffer();
-      const encryptedBytes = new Uint8Array(arrayBuffer);
-
-      // Convert encrypted bytes to string (assuming it's JSON from server)
-      const encryptedText = new TextDecoder().decode(encryptedBytes);
+      const encryptedText = await downloadFile(fileId, token);
 
       // Decrypt file
       console.log("🔓 Decrypting file...");
@@ -530,7 +553,7 @@ export default function ChatScreen() {
       const decryptedBase64 = btoa(binary);
 
       // Save to downloads
-      const downloadUri = Paths.document + '/' + fileName;
+      const downloadUri = FileSystem.documentDirectory + fileName;
       await FileSystem.writeAsStringAsync(downloadUri, decryptedBase64, {
         encoding: 'base64',
       });

@@ -1,6 +1,6 @@
 // src/App.jsx
 import React, { useEffect, useState, useRef } from "react";
-import { registerUser, loginUser, getUserKeys, filesAPI } from "./api";
+import { registerUser, loginUser, getUserKeys, filesAPI, getMessagesWithUser, getFileMessagesWithUser, getCurrentUser } from "./api";
 import {
   getOrCreateIdentityKeys,
   computeSharedSecret,
@@ -98,7 +98,6 @@ function App() {
     }
 
     const socket = new WebSocket(`ws://127.0.0.1:8000/ws?token=${tok}`);
-
     socket.onopen = () => {
       console.log("WebSocket connected");
       setWsStatus("Connected");
@@ -172,6 +171,102 @@ function App() {
     };
 
     setWs(socket);
+  }
+
+  // Logout function
+  function logout() {
+    // Close WebSocket
+    if (ws) {
+      ws.close();
+    }
+    // Clear all state
+    setToken(null);
+    setUsername(null);
+    setWs(null);
+    setWsStatus("Disconnected");
+    setChats({});
+    setActiveChat(null);
+    userKeyCache.current = {};
+    // Clear localStorage
+    if (username) {
+      localStorage.removeItem(`chats_${username}`);
+    }
+    showToast("Logged out successfully");
+  }
+
+  // Load chat history from database
+  async function loadChatHistory() {
+    if (!token) return;
+    
+    try {
+      // Get current user info to get user ID
+      const currentUser = await getCurrentUser(token);
+      const currentUserId = currentUser.id;
+      
+      // Get list of users who have messages with current user
+      // For now, we'll check known users - in a real app you'd have a contacts/conversations endpoint
+      const knownUsers = ['muna', 'munu', 'sarthak']; // Add other usernames as needed
+      
+      for (const otherUser of knownUsers) {
+        try {
+          const messages = await getMessagesWithUser(otherUser, token);
+          const fileMessages = await getFileMessagesWithUser(otherUser, token);
+          
+          const allMessages = [];
+          
+          if (messages && messages.length > 0) {
+            // Convert regular database messages to chat format
+            const chatMessages = messages.map(msg => ({
+              id: `msg_${msg.id}`,
+              from: msg.from_user_id === currentUserId ? username : otherUser,
+              to: msg.to_user_id === currentUserId ? username : otherUser,
+              text: msg.ciphertext, // Will be decrypted when displayed
+              direction: msg.from_user_id === currentUserId ? "outgoing" : "incoming",
+              created_at: msg.created_at,
+            }));
+            allMessages.push(...chatMessages);
+          }
+          
+          if (fileMessages && fileMessages.length > 0) {
+            // Convert file messages to chat format
+            const chatFileMessages = fileMessages.map(msg => ({
+              id: `file_${msg.id}`,
+              from: msg.from_user_id === currentUserId ? username : otherUser,
+              to: msg.to_user_id === currentUserId ? username : otherUser,
+              text: `📎 ${msg.filename}`,
+              isFile: true,
+              fileId: msg.id,
+              fileName: msg.filename,
+              fileSize: msg.file_size,
+              direction: msg.from_user_id === currentUserId ? "outgoing" : "incoming",
+              created_at: msg.created_at,
+            }));
+            allMessages.push(...chatFileMessages);
+          }
+          
+          if (allMessages.length > 0) {
+            // Sort all messages by created_at
+            allMessages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            
+            // Add to chats state
+            setChats(prevChats => ({
+              ...prevChats,
+              [otherUser]: {
+                messages: allMessages,
+                lastMessage: allMessages[allMessages.length - 1]?.text?.substring(0, 50) + "...",
+                lastMessageTime: allMessages[allMessages.length - 1]?.created_at,
+                unread: 0
+              }
+            }));
+          }
+        } catch (err) {
+          // User not found or no messages - skip
+          console.log(`No messages with ${otherUser}`);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load chat history:", err);
+    }
   }
 
   // Add message to a specific chat
@@ -295,8 +390,12 @@ function App() {
       });
       setToken(data.access_token);
       setUsername(authUsername);
+      setAuthUsername(""); // Clear credentials
+      setAuthPassword(""); // Clear credentials
       connectWebSocket(data.access_token);
       showToast("Login successful!");
+      // Load chat history after successful login
+      setTimeout(() => loadChatHistory(), 1000); // Wait for WebSocket to connect
     } catch (err) {
       console.error(err);
       showToast("Login failed. Check your credentials", "error");
@@ -333,7 +432,7 @@ function App() {
         );
 
         // Encrypt file
-        const encryptedFile = await encryptFile(selectedFile, sharedSecret);
+        const encryptedFile = await encryptFile(selectedFile, sharedSecret, identityKeys.publicKeyBase64);
 
         // Upload encrypted file
         const result = await filesAPI.uploadFile(
@@ -385,7 +484,7 @@ function App() {
         otherPublicKey,
         identityKeys.privateKeyBase64
       );
-      const ciphertext = encryptMessage(trimmed, sharedSecret);
+      const ciphertext = encryptMessage(trimmed, sharedSecret, identityKeys.publicKeyBase64);
 
       ws.send(
         JSON.stringify({
@@ -518,7 +617,10 @@ function App() {
   // Main chat interface
   const chatList = Object.keys(chats).sort((a, b) => {
     const timeA = chats[a].lastMessageTime || "";
-    const timeB = chats[b].lastMessageTime || "";
+          <button onClick={logout} className="btn-logout" title="Logout">
+            Logout
+          </button>    
+          const timeB = chats[b].lastMessageTime || "";
     return timeB.localeCompare(timeA);
   });
 
@@ -535,6 +637,9 @@ function App() {
           <span className={`ws-status ${wsStatus.toLowerCase()}`}>
             {wsStatus}
           </span>
+          <button onClick={logout} className="btn-logout" title="Logout">
+            Logout
+          </button>
         </div>
       </header>
 
@@ -630,8 +735,8 @@ function App() {
                     No messages yet. Start the conversation!
                   </p>
                 ) : (
-                  currentMessages.map((m) => (
-                    <div key={m.id} className={`message-bubble ${m.direction}`}>
+                  currentMessages.map((m, index) => (
+                    <div key={`${m.id}_${index}_${m.created_at}`} className={`message-bubble ${m.direction}`}>
                       <div className="message-content">
                         {m.isFile ? (
                           <div className="file-message">

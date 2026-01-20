@@ -86,27 +86,43 @@ export function computeSharedSecret(otherPublicKeyBase64, myPrivateKeyBase64) {
   }
 }
 
-export function encryptMessage(plaintext, sharedSecret) {
+export function encryptMessage(plaintext, sharedSecret, myPublicKeyBase64) {
   const nonce = nacl.randomBytes(24);
   const messageBytes = encoder.encode(plaintext);
   const box = nacl.box.after(messageBytes, nonce, sharedSecret);
 
-  // Concatenate nonce + ciphertext
-  const full = new Uint8Array(nonce.length + box.length);
-  full.set(nonce);
-  full.set(box, nonce.length);
-
-  return encodeBase64(full);
+  // Use JSON format matching mobile app
+  return JSON.stringify({
+    v: 1,
+    nonce: encodeBase64(nonce),
+    box: encodeBase64(box),
+    from_pub: myPublicKeyBase64
+  });
 }
 
 /**
- * Decrypt a base64-encoded nonce+ciphertext using sharedSecret.
+ * Decrypt a message using sharedSecret.
+ * Handles both new JSON format and old base64 format.
  * Returns plaintext string.
  */
 export function decryptMessage(ciphertextBase64, sharedSecret) {
-  const full = decodeBase64(ciphertextBase64);
-  const nonce = full.slice(0, 24);
-  const box = full.slice(24);
+  let nonce, box;
+  
+  // Try to parse as JSON (new format)
+  try {
+    const obj = JSON.parse(ciphertextBase64);
+    if (obj && obj.v === 1) {
+      nonce = decodeBase64(obj.nonce);
+      box = decodeBase64(obj.box);
+    } else {
+      throw new Error('Not valid JSON format');
+    }
+  } catch (e) {
+    // Fall back to old format (nonce + ciphertext concatenated)
+    const full = decodeBase64(ciphertextBase64);
+    nonce = full.slice(0, 24);
+    box = full.slice(24);
+  }
 
   const messageBytes = nacl.box.open.after(box, nonce, sharedSecret);
   if (!messageBytes) {
@@ -116,8 +132,8 @@ export function decryptMessage(ciphertextBase64, sharedSecret) {
   return decoder.decode(messageBytes);
 }
 
-// Encrypt file
-export async function encryptFile(file, sharedSecret) {
+// Encrypt file - uses JSON format matching mobile app
+export async function encryptFile(file, sharedSecret, myPublicKeyBase64) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     
@@ -130,13 +146,16 @@ export async function encryptFile(file, sharedSecret) {
         const nonce = nacl.randomBytes(24);
         const encrypted = nacl.box.after(uint8Array, nonce, sharedSecret);
         
-        // Combine nonce + encrypted data
-        const combined = new Uint8Array(nonce.length + encrypted.length);
-        combined.set(nonce);
-        combined.set(encrypted, nonce.length);
+        // Use JSON format matching mobile app
+        const payload = JSON.stringify({
+          v: 1,
+          nonce: encodeBase64(nonce),
+          box: encodeBase64(encrypted),
+          from_pub: myPublicKeyBase64
+        });
         
         // Convert to blob
-        const encryptedBlob = new Blob([combined], { type: 'application/octet-stream' });
+        const encryptedBlob = new Blob([payload], { type: 'application/octet-stream' });
         resolve(encryptedBlob);
       } catch (error) {
         reject(error);
@@ -148,21 +167,25 @@ export async function encryptFile(file, sharedSecret) {
   });
 }
 
-// Decrypt file
+// Decrypt file - handles JSON format matching mobile app
 export async function decryptFile(encryptedBlob, sharedSecret) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     
     reader.onload = async (e) => {
       try {
-        const arrayBuffer = e.target.result;
-        const uint8Array = new Uint8Array(arrayBuffer);
+        const text = e.target.result;
         
-        // Extract nonce and ciphertext
-        const nonce = uint8Array.slice(0, 24);
-        const ciphertext = uint8Array.slice(24);
+        // Parse JSON format
+        const obj = JSON.parse(text);
+        if (!obj || obj.v !== 1) {
+          throw new Error('Unsupported file format');
+        }
         
-        // Decrypt
+        const nonce = decodeBase64(obj.nonce);
+        const ciphertext = decodeBase64(obj.box);
+        
+        // Decrypt using the pre-computed shared secret
         const decrypted = nacl.box.open.after(ciphertext, nonce, sharedSecret);
         
         if (!decrypted) {
@@ -176,6 +199,6 @@ export async function decryptFile(encryptedBlob, sharedSecret) {
     };
     
     reader.onerror = reject;
-    reader.readAsArrayBuffer(encryptedBlob);
+    reader.readAsText(encryptedBlob);
   });
 }

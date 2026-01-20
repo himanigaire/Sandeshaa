@@ -38,6 +38,16 @@ export async function getUserKeys(username) {
   return res.data;
 }
 
+// Get current user info
+export async function getCurrentUser(token) {
+  const res = await apiClient.get("/me", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return res.data;
+}
+
 // File upload/download functions
 export const filesAPI = {
   uploadFile: async (file, toUsername, token) => {
@@ -64,5 +74,25 @@ export const filesAPI = {
     return response.data;
   },
 };
+
+// Get message history with a user
+export async function getMessagesWithUser(otherUsername, token) {
+  const response = await apiClient.get(`/messages/${otherUsername}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  return response.data;
+}
+
+// Get file message history with a user  
+export async function getFileMessagesWithUser(otherUsername, token) {
+  const response = await apiClient.get(`/file-messages/${otherUsername}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  return response.data;
+}
 
 export default apiClient;

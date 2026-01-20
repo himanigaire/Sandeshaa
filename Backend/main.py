@@ -36,7 +36,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Sandeshaa Backend (Prototype)")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174"],
+    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://192.168.1.65:5173", "http://192.168.1.65:5174"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -120,7 +120,7 @@ BLOCKED_EXTENSIONS = {
 }
 
 # Maximum file size (10MB)
-MAX_FILE_SIZE = 10 * 1024 * 1024
+MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
 
 def validate_file(file: UploadFile) -> tuple[bool, str]:
     """Validate uploaded file for security"""
@@ -444,6 +444,52 @@ def get_messages_with_user(
             "created_at": m.created_at.isoformat() if m.created_at else None,
         }
         for m in msgs
+    ]
+
+
+@app.get("/file-messages/{other_username}")
+def get_file_messages_with_user(
+    other_username: str,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Return the last 100 file messages between current_user and other_username.
+    """
+    other = db.query(models.User).filter(models.User.username == other_username).first()
+    if not other:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    file_msgs = (
+        db.query(models.FileMessage)
+        .filter(
+            or_(
+                and_(
+                    models.FileMessage.from_user_id == current_user.id,
+                    models.FileMessage.to_user_id == other.id,
+                ),
+                and_(
+                    models.FileMessage.from_user_id == other.id,
+                    models.FileMessage.to_user_id == current_user.id,
+                ),
+            )
+        )
+        .order_by(models.FileMessage.created_at.desc())
+        .limit(100)
+        .all()
+    )
+
+    return [
+        {
+            "id": m.id,
+            "from_user_id": m.from_user_id,
+            "to_user_id": m.to_user_id,
+            "filename": m.filename,
+            "file_size": m.file_size,
+            "file_type": m.file_type,
+            "created_at": m.created_at.isoformat() if m.created_at else None,
+        }
+        for m in file_msgs
     ]
 
 

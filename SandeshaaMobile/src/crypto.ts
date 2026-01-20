@@ -89,9 +89,16 @@ export async function decryptFromSender(ciphertext: string) {
   console.log('🔐 Decrypting message...');
   console.log('   My public key:', encodeBase64(publicKey).substring(0, 20) + '...');
 
-  const obj = JSON.parse(ciphertext) as EncryptedPayloadV1;
-
-  if (!obj || obj.v !== 1) throw new Error('Unsupported ciphertext format');
+  // Handle both old format (raw base64) and new format (JSON)
+  let obj: EncryptedPayloadV1;
+  try {
+    obj = JSON.parse(ciphertext) as EncryptedPayloadV1;
+    if (!obj || obj.v !== 1) throw new Error('Unsupported ciphertext format');
+  } catch (parseError) {
+    // Old format - raw base64 ciphertext, cannot decrypt without sender's public key
+    console.log('⚠️ Old format ciphertext detected - cannot decrypt without sender key');
+    throw new Error('Legacy message format - decryption not supported');
+  }
 
   console.log('   Sender public key (from_pub):', obj.from_pub.substring(0, 20) + '...');
 

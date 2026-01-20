@@ -77,7 +77,7 @@ export async function uploadFile(
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
-      'Content-Type': 'multipart/form-data',
+      // Don't set Content-Type - let fetch set it automatically with boundary
     },
     body: formData,
   });
@@ -90,8 +90,8 @@ export async function uploadFile(
   return res.json();
 }
 
-// File download
-export async function downloadFile(fileId: string, token: string): Promise<Blob> {
+// File download - returns the encrypted content as text
+export async function downloadFile(fileId: string, token: string): Promise<string> {
   const res = await fetch(`${API_BASE_URL}/download-file/${fileId}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -101,5 +101,6 @@ export async function downloadFile(fileId: string, token: string): Promise<Blob>
     throw new Error(`Download failed: ${res.status} ${text}`);
   }
 
-  return res.blob();
+  // Return as text since the encrypted content is stored as text
+  return res.text();
 }
