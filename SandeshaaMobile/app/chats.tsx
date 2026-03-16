@@ -5,7 +5,7 @@ import { FlatList, Pressable, StyleSheet, TextInput, View, Modal, Alert, Animate
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 
-const API_BASE = 'http://192.168.1.65:8000';
+const API_BASE = 'http://192.168.18.148:8000';
 
 type Chat = {
   username: string;

@@ -19,8 +19,8 @@ LogBox.ignoreLogs([
 ]);
 
 /* 🔧 CHANGE IP TO YOUR MAC IP */
-const API_BASE = "http://192.168.1.65:8000";
-const WS_BASE = "ws://192.168.1.65:8000/ws";
+const API_BASE = "http://192.168.18.148:8000";
+const WS_BASE = "ws://192.168.18.148:8000/ws";
 
 /* ---------- Types ---------- */
 

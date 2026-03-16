@@ -1,7 +1,32 @@
 import { API_BASE_URL } from "./config";
+import * as SecureStore from 'expo-secure-store';
 
-export async function apiGet(path: string) {
-  const res = await fetch(`${API_BASE_URL}${path}`);
+// Helper to get stored token
+async function getToken(): Promise<string | null> {
+  try {
+    return await SecureStore.getItemAsync('access_token');
+  } catch (e) {
+    console.warn('Failed to get token from SecureStore:', e);
+    return null;
+  }
+}
+
+// Helper to build auth headers
+function buildAuthHeaders(token?: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+export async function apiGet(path: string, token?: string) {
+  const finalToken = token || await getToken();
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    headers: buildAuthHeaders(finalToken || undefined),
+  });
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`GET ${path} failed: ${res.status} ${text}`);
@@ -9,10 +34,11 @@ export async function apiGet(path: string) {
   return res.json();
 }
 
-export async function apiPost(path: string, body: any) {
+export async function apiPost(path: string, body: any, token?: string) {
+  const finalToken = token || await getToken();
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: buildAuthHeaders(finalToken || undefined),
     body: JSON.stringify(body),
   });
 
@@ -23,16 +49,12 @@ export async function apiPost(path: string, body: any) {
   return res.json();
 }
 
-export async function apiPut(path: string, body: any) {
-  const SecureStore = require('expo-secure-store');
-  const token = await SecureStore.getItemAsync('access_token');
+export async function apiPut(path: string, body: any, token?: string) {
+  const finalToken = token || await getToken();
   
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method: "PUT",
-    headers: { 
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: buildAuthHeaders(finalToken || undefined),
     body: JSON.stringify(body),
   });
 
@@ -45,7 +67,7 @@ export async function apiPut(path: string, body: any) {
 
 export async function apiGetAuth(path: string, token: string) {
   const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: buildAuthHeaders(token),
   });
 
   if (!res.ok) {

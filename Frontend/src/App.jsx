@@ -11,6 +11,9 @@ import {
 } from "./crypto";
 import FileUpload from "./components/FileUpload";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+const WS_BASE_URL = API_BASE_URL.replace(/^http/, "ws");
+
 // Toast notification helper
 function showToast(message, type = 'success') {
   const toast = document.createElement('div');
@@ -97,7 +100,7 @@ function App() {
       ws.close();
     }
 
-    const socket = new WebSocket(`ws://127.0.0.1:8000/ws?token=${tok}`);
+    const socket = new WebSocket(`${WS_BASE_URL}/ws?token=${tok}`);
     socket.onopen = () => {
       console.log("WebSocket connected");
       setWsStatus("Connected");

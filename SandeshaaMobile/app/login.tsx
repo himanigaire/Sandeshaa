@@ -34,7 +34,8 @@ export default function LoginScreen() {
       // 4️⃣ Sync public key with server (important for E2EE!)
       const myPublicKey = await getIdentityPublicKeyB64();
       try {
-        await apiPut("/me/public-key", { identity_public_key: myPublicKey });
+        // Pass token explicitly since we just set it
+        await apiPut("/me/public-key", { identity_public_key: myPublicKey }, res.access_token);
         console.log("🔑 Public key synced with server");
       } catch (e) {
         console.warn("⚠️ Could not sync public key:", e);

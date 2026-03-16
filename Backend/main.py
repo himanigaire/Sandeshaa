@@ -13,9 +13,8 @@ import os
 import shutil
 import mimetypes
 from pathlib import Path
-import magic
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(dotenv_path=Path(__file__).with_name(".env"))
 from sqlalchemy import or_, and_
 
 from database import Base, engine, SessionLocal
@@ -36,7 +35,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Sandeshaa Backend (Prototype)")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://192.168.1.65:5173", "http://192.168.1.65:5174"],
+    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://192.168.18.148:5173", "http://192.168.18.148:5174"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -277,20 +276,28 @@ def register_user(req: RegisterRequest, db: Session = Depends(get_db)):
             detail="Username already taken",
         )
 
-    hashed_password = auth.get_password_hash(req.password)
+    try:
+        hashed_password = auth.get_password_hash(req.password)
 
-    user = models.User(
-        username=req.username,
-        password_hash=hashed_password,
-        identity_public_key=req.identity_public_key,
-        prekey_public=req.prekey_public,
-    )
+        user = models.User(
+            username=req.username,
+            password_hash=hashed_password,
+            identity_public_key=req.identity_public_key,
+            prekey_public=req.prekey_public,
+        )
 
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
 
-    return UserInfoResponse(id=user.id, username=user.username)
+        return UserInfoResponse(id=user.id, username=user.username)
+    except Exception as e:
+        db.rollback()
+        print(f"❌ Registration error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Registration failed",
+        )
 
 
 @app.post("/login", response_model=TokenResponse)
@@ -298,18 +305,27 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     """
     Log in a user by username + password and return a JWT token.
     """
-    user = db.query(models.User).filter(models.User.username == req.username).first()
+    try:
+        user = db.query(models.User).filter(models.User.username == req.username).first()
 
-    if not user or not auth.verify_password(req.password, user.password_hash):
+        if not user or not auth.verify_password(req.password, user.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid username or password",
+            )
+
+        # Store user.id as "sub" in token
+        token = auth.create_access_token({"sub": str(user.id)})
+
+        return TokenResponse(access_token=token)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Login error: {e}")
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Login failed",
         )
-
-    # Store user.id as "sub" in token
-    token = auth.create_access_token({"sub": str(user.id)})#This line is changed to string 
-
-    return TokenResponse(access_token=token)
 
 
 @app.get("/me", response_model=UserInfoResponse)
@@ -926,3 +942,11 @@ scheduler.start()
 atexit.register(lambda: scheduler.shutdown())
 
 print("✅ Auto-cleanup scheduler started (messages: 7 days, files: 24 hours)")
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    host = os.getenv("SERVER_HOST", "127.0.0.1")
+    port = int(os.getenv("SERVER_PORT", "8000"))
+    uvicorn.run("main:app", host=host, port=port, reload=True)
