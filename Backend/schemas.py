@@ -32,6 +32,3 @@ class UserInfoResponse(BaseModel):
 
 class UpdatePublicKeyRequest(BaseModel):
     identity_public_key: str
-
-class UpdatePublicKeyRequest(BaseModel):
-    identity_public_key: str

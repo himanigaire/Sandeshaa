@@ -4,10 +4,11 @@ from typing import Optional
 
 from jose import jwt
 import bcrypt
+import os
 
-SECRET_KEY = "XnBzj8X-d-Nns70kz62RCbxbeQk0lRds3SOwPKTLsAA"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 1 day
+SECRET_KEY = os.getenv("SECRET_KEY", "XnBzj8X-d-Nns70kz62RCbxbeQk0lRds3SOwPKTLsAA")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))  # 1 day
 
 def get_password_hash(password: str) -> str:
     """Hash a plain password using bcrypt (max 72 bytes)."""

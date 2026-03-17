@@ -33,9 +33,21 @@ from schemas import (
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Sandeshaa Backend (Prototype)")
+
+# CORS: read allowed origins from env, fall back to local dev defaults
+_default_origins = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
+]
+_env_origins = os.getenv("ALLOWED_ORIGINS", "").strip()
+if _env_origins:
+    _default_origins.extend([o.strip() for o in _env_origins.split(",") if o.strip()])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://192.168.18.148:5173", "http://192.168.18.148:5174"],
+    allow_origins=_default_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -63,7 +75,6 @@ def get_current_user(
     db: Session = Depends(get_db),
 ) -> models.User:
     token = credentials.credentials
-    print(f"🔍 Token received: {token[:30]}...")
 
     cred_exc = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -73,26 +84,22 @@ def get_current_user(
 
     try:
         payload = jwt.decode(token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
-        print(f"✅ Decoded payload: {payload}")
         user_id = payload.get("sub")
-        print(f"👤 Looking for user_id: {user_id}")
         if user_id is None:
             raise cred_exc
-        user_id = int(user_id) # Convert user_id to integer
-    except JWTError as e:
-        print(f"❌ JWT Error: {e}")
+        user_id = int(user_id)
+    except JWTError:
         raise cred_exc
 
     user = db.query(models.User).filter(models.User.id == user_id).first()
-    print(f"🔎 Found user: {user}")
     if user is None:
         raise cred_exc
 
     return user
 
-# Create uploads directory
-UPLOAD_DIR = Path("uploads")
-UPLOAD_DIR.mkdir(exist_ok=True)
+# Create uploads directory (absolute path, works on Render too)
+UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", str(Path(__file__).resolve().parent / "uploads")))
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # Allowed file types (whitelist approach - SAFER!)
 ALLOWED_EXTENSIONS = {
