@@ -1,6 +1,7 @@
 {\rtf1\ansi\ansicpg1252\cocoartf2822
 \cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\froman\fcharset0 Times-Roman;\f2\fmodern\fcharset0 Courier;
-\f3\froman\fcharset0 Times-Bold;}
+\f3\fnil\fcharset0 Menlo-Regular;\f4\froman\fcharset0 Times-Bold;\f5\froman\fcharset0 TimesNewRomanPSMT;
+}
 {\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red109\green109\blue109;}
 {\*\expandedcolortbl;;\cssrgb\c0\c0\c0;\cssrgb\c50196\c50196\c50196;}
 {\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid1\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}
@@ -15,40 +16,54 @@
 \pard\pardeftab720\sa240\partightenfactor0
 
 \f1 \cf0 \expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 final architecture becomes:
+final architecture becomes:
 \f2\fs26 \
 \pard\pardeftab720\partightenfactor0
-\cf0 Android \uc0\u8594  Native app (React Native CLI or Flutter)\
-iPhone \uc0\u8594  PWA (browser installed app)\
-Backend \uc0\u8594  FastAPI (same)\
-Database \uc0\u8594  MySQL (same)\
-Hosting \uc0\u8594  Cloud server\
+\cf0 Android 
+\f3 \uc0\u8594 
+\f2  Native app (React Native CLI or Flutter)\
+iPhone 
+\f3 \uc0\u8594 
+\f2  PWA (browser installed app)\
+Backend 
+\f3 \uc0\u8594 
+\f2  FastAPI (same)\
+Database 
+\f3 \uc0\u8594 
+\f2  MySQL (same)\
+Hosting 
+\f3 \uc0\u8594 
+\f2  Cloud server\
 \
 \pard\pardeftab720\sa240\partightenfactor0
 
 \f1\fs24 \cf0 Now the real question becomes 
-\f3\b how to execute cleanly
+\f4\b how to execute cleanly
 \f1\b0 .\
 \pard\pardeftab720\partightenfactor0
-\cf3 \strokec3 \
+\cf3 \
 \pard\pardeftab720\sa298\partightenfactor0
 
-\f3\b\fs36 \cf0 \strokec2 Step 1 \'97 Prepare backend for internet (foundation)\
+\f4\b\fs36 \cf0 Step 1 \'97 Prepare backend for internet (foundation)\
 \pard\pardeftab720\sa240\partightenfactor0
 
 \f1\b0\fs24 \cf0 Before touching mobile:\
 Your backend must:\
 \pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
-\ls1\ilvl0\cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 Have public URL\
-\ls1\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 HTTPS enabled\
-\ls1\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 CORS configured\
-\ls1\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 File storage working remotely\
+\ls1\ilvl0\cf0 \kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+Have public URL\
+\ls1\ilvl0\kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+HTTPS enabled\
+\ls1\ilvl0\kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+CORS configured\
+\ls1\ilvl0\kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+File storage working remotely\
 \pard\pardeftab720\sa240\partightenfactor0
-\cf0 Deploy:\uc0\u8232 Backend \u8594  Render\u8232 Database \u8594  Railway MySQL\
+\cf0 Deploy:\uc0\u8232 Backend 
+\f5 \uc0\u8594 
+\f1  Render\uc0\u8232 Database 
+\f5 \uc0\u8594 
+\f1  Railway MySQL\
 After deployment you get something like:\
 \pard\pardeftab720\partightenfactor0
 
@@ -69,10 +84,10 @@ browser\
 
 \f1\fs24 \cf0 If backend fails, mobile fails.\
 \pard\pardeftab720\partightenfactor0
-\cf3 \strokec3 \
+\cf3 \
 \pard\pardeftab720\sa298\partightenfactor0
 
-\f3\b\fs36 \cf0 \strokec2 Step 2 \'97 Android native app (remove Expo)\
+\f4\b\fs36 \cf0 Step 2 \'97 Android native app (remove Expo)\
 \pard\pardeftab720\sa240\partightenfactor0
 
 \f1\b0\fs24 \cf0 Since you already wrote React Native logic, easiest migration:\
@@ -95,7 +110,9 @@ utils/\
 \
 \pard\pardeftab720\sa240\partightenfactor0
 
-\f1\fs24 \cf0 From Expo project \uc0\u8594  RN CLI project.\
+\f1\fs24 \cf0 From Expo project 
+\f5 \uc0\u8594 
+\f1  RN CLI project.\
 Replace Expo things:\
 Remove:\
 \pard\pardeftab720\partightenfactor0
@@ -119,7 +136,9 @@ axios\
 \pard\pardeftab720\sa240\partightenfactor0
 
 \f1\fs24 \cf0 Important replacements:\
-Expo Storage \uc0\u8594  AsyncStorage:\
+Expo Storage 
+\f5 \uc0\u8594 
+\f1  AsyncStorage:\
 \pard\pardeftab720\partightenfactor0
 
 \f2\fs26 \cf0 \
@@ -163,10 +182,10 @@ android/app/build/outputs/apk/release/app-release.apk\
 \f1\fs24 \cf0 Share this file.\
 Done.\
 \pard\pardeftab720\partightenfactor0
-\cf3 \strokec3 \
+\cf3 \
 \pard\pardeftab720\sa298\partightenfactor0
 
-\f3\b\fs36 \cf0 \strokec2 Step 3 \'97 Convert your web app into PWA (this is the key trick)\
+\f4\b\fs36 \cf0 Step 3 \'97 Convert your web app into PWA (this is the key trick)\
 \pard\pardeftab720\sa240\partightenfactor0
 
 \f1\b0\fs24 \cf0 Since you already have web messaging UI:\
@@ -174,7 +193,7 @@ Just add PWA support.\
 You need only 3 things:\
 \pard\pardeftab720\sa240\partightenfactor0
 
-\f3\b \cf0 1 manifest.json
+\f4\b \cf0 1 manifest.json
 \f1\b0 \uc0\u8232 Example:\
 \pard\pardeftab720\partightenfactor0
 
@@ -197,7 +216,7 @@ You need only 3 things:\
 \
 \pard\pardeftab720\sa240\partightenfactor0
 
-\f3\b\fs24 \cf0 2 Service worker
+\f4\b\fs24 \cf0 2 Service worker
 \f1\b0 \
 Example:\
 \pard\pardeftab720\partightenfactor0
@@ -209,14 +228,14 @@ self.addEventListener('install', event => \{\
 \
 \pard\pardeftab720\sa240\partightenfactor0
 
-\f3\b\fs24 \cf0 3 HTTPS hosting
+\f4\b\fs24 \cf0 3 HTTPS hosting
 \f1\b0 \
 Host frontend on:\
 \pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
-\ls2\ilvl0\cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 Vercel\
-\ls2\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 Netlify\
+\ls2\ilvl0\cf0 \kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+Vercel\
+\ls2\ilvl0\kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+Netlify\
 \pard\pardeftab720\sa240\partightenfactor0
 \cf0 Both free.\
 Deploy:\
@@ -237,10 +256,10 @@ https://sandeshaa.vercel.app\
 \
 \pard\pardeftab720\partightenfactor0
 
-\f1\fs24 \cf3 \strokec3 \
+\f1\fs24 \cf3 \
 \pard\pardeftab720\sa298\partightenfactor0
 
-\f3\b\fs36 \cf0 \strokec2 Step 4 \'97 How iPhone users install\
+\f4\b\fs36 \cf0 Step 4 \'97 How iPhone users install\
 \pard\pardeftab720\sa240\partightenfactor0
 
 \f1\b0\fs24 \cf0 On iPhone Safari:\
@@ -252,31 +271,33 @@ https://sandeshaa.vercel.app\
 \
 \pard\pardeftab720\sa240\partightenfactor0
 
-\f1\fs24 \cf0 Press:\uc0\u8232 Share \u8594  Add to Home Screen\
+\f1\fs24 \cf0 Press:\uc0\u8232 Share 
+\f5 \uc0\u8594 
+\f1  Add to Home Screen\
 Now it behaves like an app:\
 \pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
-\ls3\ilvl0\cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 App icon\
-\ls3\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 Fullscreen\
-\ls3\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 Persistent login\
-\ls3\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 Works globally\
+\ls3\ilvl0\cf0 \kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+App icon\
+\ls3\ilvl0\kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+Fullscreen\
+\ls3\ilvl0\kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+Persistent login\
+\ls3\ilvl0\kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+Works globally\
 \pard\pardeftab720\sa240\partightenfactor0
 \cf0 No Apple fee.\
 This is the loophole.\
 \pard\pardeftab720\partightenfactor0
-\cf3 \strokec3 \
+\cf3 \
 \pard\pardeftab720\sa298\partightenfactor0
 
-\f3\b\fs36 \cf0 \strokec2 Step 5 \'97 Important fixes for messaging PWA\
+\f4\b\fs36 \cf0 Step 5 \'97 Important fixes for messaging PWA\
 \pard\pardeftab720\sa240\partightenfactor0
 
 \f1\b0\fs24 \cf0 Add:\
 \pard\pardeftab720\sa240\partightenfactor0
 
-\f3\b \cf0 JWT persistent login
+\f4\b \cf0 JWT persistent login
 \f1\b0 \uc0\u8232 Use:\
 \pard\pardeftab720\partightenfactor0
 
@@ -285,28 +306,28 @@ localStorage\
 \
 \pard\pardeftab720\sa240\partightenfactor0
 
-\f3\b\fs24 \cf0 Background fetch
+\f4\b\fs24 \cf0 Background fetch
 \f1\b0 \uc0\u8232 Service worker cache messages.\
 
-\f3\b Push notifications (optional)
+\f4\b Push notifications (optional)
 \f1\b0 \uc0\u8232 Use:\u8232 Firebase Cloud Messaging.\
 \pard\pardeftab720\partightenfactor0
-\cf3 \strokec3 \
+\cf3 \
 \pard\pardeftab720\sa298\partightenfactor0
 
-\f3\b\fs36 \cf0 \strokec2 Step 6 \'97 File sending improvement (important)\
+\f4\b\fs36 \cf0 Step 6 \'97 File sending improvement (important)\
 \pard\pardeftab720\sa240\partightenfactor0
 
 \f1\b0\fs24 \cf0 Right now you probably store files locally.\
 Better:\
 Store in:\
 \pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
-\ls4\ilvl0\cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 Cloudinary free tier\
-\ls4\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 Backend storage\
-\ls4\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 S3 compatible storage\
+\ls4\ilvl0\cf0 \kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+Cloudinary free tier\
+\ls4\ilvl0\kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+Backend storage\
+\ls4\ilvl0\kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+S3 compatible storage\
 \pard\pardeftab720\sa240\partightenfactor0
 \cf0 Good free:\uc0\u8232 Cloudinary\
 Flow becomes:\
@@ -314,21 +335,27 @@ Flow becomes:\
 
 \f2\fs26 \cf0 \
 User uploads file\
-\uc0\u8595 \
+
+\f3 \uc0\u8595 
+\f2 \
 Backend stores file\
-\uc0\u8595 \
+
+\f3 \uc0\u8595 
+\f2 \
 URL saved in DB\
-\uc0\u8595 \
+
+\f3 \uc0\u8595 
+\f2 \
 Receiver downloads\
 \
 \pard\pardeftab720\sa240\partightenfactor0
 
 \f1\fs24 \cf0 Otherwise mobile downloads fail.\
 \pard\pardeftab720\partightenfactor0
-\cf3 \strokec3 \
+\cf3 \
 \pard\pardeftab720\sa298\partightenfactor0
 
-\f3\b\fs36 \cf0 \strokec2 Step 7 \'97 Security improvements you should add (since you're security focused)\
+\f4\b\fs36 \cf0 Step 7 \'97 Security improvements you should add (since you're security focused)\
 \pard\pardeftab720\sa240\partightenfactor0
 
 \f1\b0\fs24 \cf0 Add:\
@@ -365,10 +392,10 @@ Cron job\
 \
 \pard\pardeftab720\partightenfactor0
 
-\f1\fs24 \cf3 \strokec3 \
+\f1\fs24 \cf3 \
 \pard\pardeftab720\sa298\partightenfactor0
 
-\f3\b\fs36 \cf0 \strokec2 Step 8 \'97 Final production structure you should aim for\
+\f4\b\fs36 \cf0 Step 8 \'97 Final production structure you should aim for\
 \pard\pardeftab720\sa240\partightenfactor0
 
 \f1\b0\fs24 \cf0 This is your clean final system:\
@@ -376,35 +403,124 @@ Cron job\
 
 \f2\fs26 \cf0 \
 Android App (APK)\
-        \uc0\u8595 \
+        
+\f3 \uc0\u8595 
+\f2 \
 FastAPI API (Render)\
-        \uc0\u8595 \
+        
+\f3 \uc0\u8595 
+\f2 \
 MySQL (Railway)\
-        \uc0\u8595 \
+        
+\f3 \uc0\u8595 
+\f2 \
 File Storage (Cloudinary)\
 \
 iPhone Users:\
 PWA (Vercel hosting)\
-        \uc0\u8595 \
+        
+\f3 \uc0\u8595 
+\f2 \
 Same FastAPI backend\
 \
 \pard\pardeftab720\sa240\partightenfactor0
 
 \f1\fs24 \cf0 This is actually how many MVP startups operate.\
 \pard\pardeftab720\partightenfactor0
-\cf3 \strokec3 \
+\cf3 \
 \pard\pardeftab720\sa298\partightenfactor0
 
-\f3\b\fs36 \cf0 \strokec2 Step 9 \'97 One smart architectural suggestion\
+\f4\b\fs36 \cf0 Step 9 \'97 One smart architectural suggestion\
 \pard\pardeftab720\sa240\partightenfactor0
 
 \f1\b0\fs24 \cf0 Since you already encrypt:\
 Move toward:\uc0\u8232 
-\f3\b Client side encryption
+\f4\b Client side encryption
 \f1\b0 \
 Meaning:\uc0\u8232 Encrypt before sending.\
 Server stores only ciphertext.\
 This is closer to zero-trust messaging.\
 Concept used by:\uc0\u8232 Signal\
 Even if DB leaks:\uc0\u8232 Messages unreadable.\
+Promppts =========================================================\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 \outl0\strokewidth0 \strokec2 PROJECT REQUEST:\
+I am building a secure messaging mobile application called Sandeshaa using:\
+Frontend:\uc0\u8232 React Native CLI (TypeScript)\u8232 Android native target\
+Backend:\uc0\u8232 FastAPI hosted on Render\
+Database:\uc0\u8232 MySQL hosted on Railway\
+Architecture flow:\
+Mobile App \uc0\u8594  Render API \u8594  Railway Database\
+The app already supports:\
+User authentication\uc0\u8232 JWT login system\u8232 Messaging\u8232 File transfer\u8232 Encryption\u8232 WebSocket real-time messaging\u8232 Secure token storage using react-native-keychain\
+I now want to improve the architecture to match professional mobile app standards and avoid common engineering mistakes.\
+I want help implementing the following improvements correctly without breaking the current architecture.\
+REQUIRED IMPROVEMENTS:\
+1 \'97 Environment configuration separation\
+I want to properly separate:\
+Development environment (local backend)\uc0\u8232 Testing environment (optional staging)\u8232 Production environment (Render backend)\
+I want a clean config structure such as:\
+src/config.ts\
+Requirements:\
+Use environment detection (
+\f4\b DEV
+\f1\b0 )\uc0\u8232 Avoid hardcoded URLs\u8232 Allow easy switching of backend URLs\u8232 Follow professional structure used in production apps\
+Provide:\
+Best config file structure\uc0\u8232 Example implementation\u8232 Best practices\
+2 \'97 Professional API error handling layer\
+Currently API calls are direct axios calls.\
+I want to create:\
+src/api/client.ts\
+Requirements:\
+Central axios instance\uc0\u8232 Timeout protection\u8232 Auth header injection\u8232 401 auto logout handling\u8232 Network error handling\u8232 Backend downtime handling (Render cold start)\u8232 Proper error propagation\
+Provide:\
+Best API client architecture\uc0\u8232 Axios interceptor examples\u8232 Error handling best practices\u8232 Retry strategy design\
+3 \'97 State management architecture\
+I want to avoid:\
+Prop drilling\uc0\u8232 Random useState usage\u8232 Auth state inconsistency\
+I want to implement centralized state using Zustand.\
+Requirements:\
+Auth store\uc0\u8232 Token management\u8232 Login state persistence\u8232 Logout handling\u8232 Chat state possibility\
+Provide:\
+Recommended store structure\uc0\u8232 Folder structure\u8232 Example Zustand stores\u8232 Best practices for scaling later\
+4 \'97 Connection retry strategy\
+My backend is on Render free tier which sleeps.\
+I want:\
+Automatic retry for failed requests\uc0\u8232 Timeout handling\u8232 Exponential backoff strategy\u8232 Graceful loading behavior\
+Provide:\
+Axios retry setup\uc0\u8232 Manual retry alternative\u8232 Best retry limits\u8232 UX best practices\
+5 \'97 Secure token storage verification\
+I already use react-native-keychain.\
+I want to confirm:\
+Correct storage architecture\uc0\u8232 Best token handling practice\u8232 Refresh token storage strategy\u8232 Secure logout process\
+Provide:\
+Best practices for secure mobile authentication storage.\
+ADDITIONAL ARCHITECTURE IMPROVEMENTS I WANT NEXT:\
+I want guidance implementing:\
+JWT refresh token system\uc0\u8232 WebSocket reconnect logic\u8232 Offline message queue system\
+DETAILS:\
+Refresh token system should:\
+Auto refresh access token\uc0\u8232 Avoid forcing user logout\u8232 Handle expired sessions securely\
+WebSocket reconnect should:\
+Auto reconnect on drop\uc0\u8232 Use exponential retry\u8232 Handle mobile network switching\u8232 Prevent duplicate connections\
+Offline queue should:\
+Store unsent messages locally\uc0\u8232 Send automatically when online\u8232 Prevent message duplication\u8232 Handle failure recovery\
+PROVIDE:\
+Architecture design\uc0\u8232 Implementation approach\u8232 Folder structure suggestions\u8232 Production best practices\
+IMPORTANT CONSTRAINTS:\
+Do NOT suggest:\
+Expo\uc0\u8232 Paid services\u8232 Changing backend framework\u8232 Changing database\u8232 Major architecture rewrite\
+Focus only on improving existing architecture.\
+EXPECTED RESPONSE STYLE:\
+Provide:\
+Step-by-step implementation guidance\uc0\u8232 Code examples\u8232 Professional best practices\u8232 Clean architecture suggestions\
+Avoid:\
+Theory explanations\uc0\u8232 Beginner explanations\u8232 Unrelated suggestions\
+PROJECT GOAL:\
+Make this project production-style architecture suitable for:\
+Mobile engineering portfolio\uc0\u8232 Security engineering portfolio\u8232 Internship level production demonstration\
+END REQUEST.\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 \outl0\strokewidth0 \'a0\
+\
 }

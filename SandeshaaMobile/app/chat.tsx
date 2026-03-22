@@ -10,6 +10,7 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { decryptFromSender, encryptForRecipient, encryptFileForRecipient, decryptFileFromSender } from "../src/crypto";
 import { uploadFile, downloadFile } from "../src/api";
+import { API_BASE_URL as API_BASE, WS_BASE_URL as WS_BASE } from "../src/config";
 
 // Ignore specific warnings that we handle gracefully
 LogBox.ignoreLogs([
@@ -17,10 +18,6 @@ LogBox.ignoreLogs([
   'User not found',
   'Could not decrypt message',
 ]);
-
-/* 🔧 CHANGE IP TO YOUR MAC IP */
-const API_BASE = "http://192.168.18.148:8000";
-const WS_BASE = "ws://192.168.18.148:8000/ws";
 
 /* ---------- Types ---------- */
 

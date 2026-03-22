@@ -4,8 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { FlatList, Pressable, StyleSheet, TextInput, View, Modal, Alert, Animated, PanResponder } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-
-const API_BASE = 'http://192.168.18.148:8000';
+import { API_BASE_URL as API_BASE } from '../src/config';
 
 type Chat = {
   username: string;
