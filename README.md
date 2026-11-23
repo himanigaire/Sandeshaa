@@ -693,7 +693,7 @@ Contributions are welcome! Here's how you can help:
 
 ## 📄 License
 
-This project is developed as part of a **7th Semester Computer Science Project** at University of West of England.
+This project is developed as part of a **7th Semester Cybersecurity Project** at University of West of England.
 
 **Status:** Academic Project (Single Developer)
 
