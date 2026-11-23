@@ -270,7 +270,7 @@ Sandeshaa/
 5. **Create `.env` file:**
    ```env
    DATABASE_URL=mysql+pymysql://sandeshaa_user:your_password@localhost/sandeshaa
-   SECRET_KEY=XnBzj8X-d-Nns70kz62RCbxbeQk0lRds3SOwPKTLsAA
+   SECRET_KEY=****************************
    ALGORITHM=HS256
    ACCESS_TOKEN_EXPIRE_MINUTES=1440
    ```
@@ -538,7 +538,7 @@ This will start both backend and frontend servers simultaneously.
 DATABASE_URL=mysql+pymysql://username:password@localhost/sandeshaa
 
 # JWT
-SECRET_KEY=your-super-secret-key-change-this-in-production
+SECRET_KEY=******************
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
 
